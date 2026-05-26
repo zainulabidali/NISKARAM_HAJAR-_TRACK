@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Madrasa Namaz - Prayer Attendance System</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Premium mobile-first Progressive Web App for managing Madrasa prayer attendance offline. Generate and share daily and monthly reports via WhatsApp.">
+  <meta name="theme-color" content="#064e3b">
+  
+  <!-- PWA Manifest & App Icons -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  
+  <!-- Premium Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Core Styling -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- PWA Custom Add to Home Screen Banner -->
+    <div id="pwa-install-banner" class="pwa-banner">
+      <div class="pwa-banner-content">
+        <!-- SVG mini mosque logo -->
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pwa-banner-logo" style="background:#053e2f; padding:4px;">
+          <path d="M12 2L4 7v13a1 1 0 001 1h5v-5h4v5h5a1 1 0 001-1V7l-8-5z" />
+          <path d="M8 7a4 4 0 018 0" stroke-width="1.5" />
+        </svg>
+        <div>
+          <div style="font-weight: 800; font-size: 0.85rem;">Madrasa Namaz App</div>
+          <div style="font-size: 0.7rem; color: #fbbf24; font-weight: 500;">Add to Home Screen for Native Feel</div>
+        </div>
+      </div>
+      <div class="pwa-banner-buttons">
+        <button id="pwa-install-btn" class="btn-pwa-install">Install</button>
+        <button id="pwa-install-close" class="btn-pwa-close">&times;</button>
+      </div>
+    </div>
+
+    <!-- Offline Mode top indicator banner -->
+    <div id="offline-indicator" class="offline-banner"></div>
+
+    <!-- Main Navigation Header -->
+    <header class="app-header">
+      <div class="header-title-container">
+        <span class="header-subtitle" id="header-madrasa-name">Darul Huda Islamic Madrasa</span>
+        <h1 class="header-title">Namaz Portal</h1>
+      </div>
+      <div class="header-date-badge">
+        <!-- Minimal calendar outline SVG -->
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+        <span id="current-header-date">26 May 2026</span>
+      </div>
+    </header>
+
+    <!-- Scrollable content panels -->
+    <main class="app-main" id="view-container">
+      
+      <!-- MODULE 1: HOME / DASHBOARD VIEW -->
+      <section id="home-view" class="app-view active">
+        
+        <!-- Welcome greeting -->
+        <div style="margin-bottom: 16px;">
+          <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">Assalamu Alaikum,</h2>
+          <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Welcome back to your prayer dashboard tracker.</p>
+        </div>
+
+        <!-- Attendance Stats circular Dial Card -->
+        <div class="card">
+          <div class="progress-card-container">
+            <div id="dashboard-progress-ring" class="progress-circle-frame">
+              <div class="progress-circle-inner">
+                <span class="progress-percentage" id="dash-pct">0%</span>
+                <span class="progress-pct-label">Present</span>
+              </div>
+            </div>
+            <div class="progress-card-text">
+              <h3>Today's Overall Attendance</h3>
+              <p>Mashallah, stats reflect cumulative present/late rates across all prayer sessions marked today.</p>
+              <div style="margin-top: 6px;" class="save-badge" id="dash-status-pill">
+                <span>Updated Live</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grid boxes statistics -->
+        <div class="dashboard-grid">
+          <div class="stat-box">
+            <span class="stat-label">Total Students</span>
+            <span class="stat-value" id="dash-total-students">0</span>
+          </div>
+          <div class="stat-box present">
+            <span class="stat-label">Present Today</span>
+            <span class="stat-value" id="dash-present-count">0</span>
+          </div>
+          <div class="stat-box absent">
+            <span class="stat-label">Absent Today</span>
+            <span class="stat-value" id="dash-absent-count">0</span>
+          </div>
+          <div class="stat-box leave">
+            <span class="stat-label">On Leave Today</span>
+            <span class="stat-value" id="dash-leave-count">0</span>
+          </div>
+        </div>
+
+        <!-- Today's marked prayers list card -->
+        <div class="card">
+          <div class="card-title-bar">
+            <div class="card-title">
+              <!-- Custom checklist mini SVG -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                <path d="M22 4L12 14.01l-3-3" stroke="var(--secondary)" />
+              </svg>
+              Today's Prayer Statuses
+            </div>
+          </div>
+          <div id="dash-prayers-tracker" style="display:flex; flex-direction:column; gap:8px;">
+            <!-- Rendered dynamically by app.js -->
+          </div>
+        </div>
+
+        <!-- Quick tips / Islamic quote banner -->
+        <div style="background: linear-gradient(135deg, rgba(6, 78, 59, 0.04), rgba(212, 175, 55, 0.04)); border: 1px solid var(--border-light); padding: 12px; border-radius: 12px; font-size: 0.72rem; text-align: center; color: var(--text-muted); font-style: italic; font-weight: 500; margin-bottom: 20px;">
+          "The first matter that the slave will be brought to account for on the Day of Judgment is his prayer. If it is sound, then the rest of his deeds will be sound."
+        </div>
+
+      </section>
+
+      <!-- MODULE 2: ATTENDANCE VIEW -->
+      <section id="attendance-view" class="app-view">
+        
+        <!-- Selection parameters -->
+        <div class="card" style="padding: 14px; margin-bottom: 12px;">
+          <div class="selector-row">
+            
+            <div class="form-group">
+              <label class="form-label" for="attendance-date">Date</label>
+              <input type="date" id="attendance-date" class="form-input">
+            </div>
+
+            <div class="form-group" style="grid-column: span 2;">
+              <label class="form-label" for="attendance-class-select">Select Class</label>
+              <select id="attendance-class-select" class="form-select">
+                <!-- Loaded dynamically -->
+              </select>
+            </div>
+
+          </div>
+
+          <!-- Dynamic custom prayer selector badges row -->
+          <label class="form-label" style="display:block; margin-bottom:6px;">Select Prayer</label>
+          <div class="prayer-selector-badges" id="prayer-badges-container">
+            
+            <button class="prayer-badge-btn active" data-prayer="Fajr">
+              <svg class="prayer-icon" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>
+              <span>Fajr</span>
+            </button>
+
+            <button class="prayer-badge-btn" data-prayer="Dhuhr">
+              <svg class="prayer-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
+              <span>Dhuhr</span>
+            </button>
+
+            <button class="prayer-badge-btn" data-prayer="Asr">
+              <svg class="prayer-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
+              <span>Asr</span>
+            </button>
+
+            <button class="prayer-badge-btn" data-prayer="Maghrib">
+              <svg class="prayer-icon" viewBox="0 0 24 24"><path d="M17 18a5 5 0 00-10 0M2 20h20M12 2v4M5.22 5.22l2.83 2.83M18.78 5.22l-2.83 2.83" /></svg>
+              <span>Maghrib</span>
+            </button>
+
+            <button class="prayer-badge-btn" data-prayer="Isha">
+              <svg class="prayer-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>
+              <span>Isha</span>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- Attendance roster section header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding: 0 4px;">
+          <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--primary);">Student Roster</h3>
+          <div class="save-badge" id="auto-save-toast">
+            <!-- Tiny dynamic visual checklist -->
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+            <span>Saved</span>
+          </div>
+        </div>
+
+        <!-- Dynamic summary counters -->
+        <div class="attendance-header-summary">
+          <div>Present: <span id="att-count-present" style="color:var(--color-present);">0</span></div>
+          <div>Absent: <span id="att-count-absent" style="color:var(--color-absent);">0</span></div>
+          <div>Late: <span id="att-count-late" style="color:var(--color-late);">0</span></div>
+          <div>Leave: <span id="att-count-leave" style="color:var(--color-leave);">0</span></div>
+        </div>
+
+        <!-- The core interactive student list container -->
+        <div class="attendance-list" id="attendance-students-list">
+          <!-- Loaded dynamically via js/app.js -->
+        </div>
+
+        <!-- Extra spacing buffer for footer navigation -->
+        <div style="height: 40px;"></div>
+
+      </section>
+
+      <!-- MODULE 3: REPORTS VIEW -->
+      <section id="reports-view" class="app-view">
+        
+        <!-- Toggle Tabs: Daily vs Monthly -->
+        <div class="report-tabs">
+          <button class="report-tab-btn active" id="tab-daily-report">Daily Report</button>
+          <button class="report-tab-btn" id="tab-monthly-report">Monthly Summary</button>
+        </div>
+
+        <!-- Daily Report Form Fields -->
+        <div class="card" id="form-daily-report-fields">
+          <div class="selector-row">
+            
+            <div class="form-group">
+              <label class="form-label" for="report-daily-date">Date</label>
+              <input type="date" id="report-daily-date" class="form-input">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="report-daily-class">Class</label>
+              <select id="report-daily-class" class="form-select"></select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="report-daily-prayer">Prayer</label>
+              <select id="report-daily-prayer" class="form-select">
+                <option value="Fajr">Fajr</option>
+                <option value="Dhuhr">Dhuhr</option>
+                <option value="Asr">Asr</option>
+                <option value="Maghrib">Maghrib</option>
+                <option value="Isha">Isha</option>
+              </select>
+            </div>
+
+          </div>
+          <button class="btn-primary" id="btn-generate-daily">
+            <!-- Custom dynamic paper list SVG icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+            </svg>
+            Generate Daily Report
+          </button>
+        </div>
+
+        <!-- Monthly Report Form Fields -->
+        <div class="card" id="form-monthly-report-fields" style="display:none;">
+          <div class="selector-row" style="grid-template-columns: 2fr 1fr 1fr;">
+            
+            <div class="form-group">
+              <label class="form-label" for="report-monthly-class">Class</label>
+              <select id="report-monthly-class" class="form-select"></select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="report-monthly-month">Month</label>
+              <select id="report-monthly-month" class="form-select">
+                <option value="1">Jan</option>
+                <option value="2">Feb</option>
+                <option value="3">Mar</option>
+                <option value="4">Apr</option>
+                <option value="5">May</option>
+                <option value="6">Jun</option>
+                <option value="7">Jul</option>
+                <option value="8">Aug</option>
+                <option value="9">Sep</option>
+                <option value="10">Oct</option>
+                <option value="11">Nov</option>
+                <option value="12">Dec</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="report-monthly-year">Year</label>
+              <select id="report-monthly-year" class="form-select">
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+              </select>
+            </div>
+
+          </div>
+          <button class="btn-primary" id="btn-generate-monthly">
+            <!-- Custom spreadsheet sheet SVG icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+            </svg>
+            Generate Monthly Report
+          </button>
+        </div>
+
+        <!-- SHARED GENERATED REPORT VIEWING CARD -->
+        <div class="report-result-panel" id="report-result-card">
+          <div class="card-title-bar">
+            <div class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
+              Report Result
+            </div>
+            <div style="font-size: 0.72rem; font-weight: 800; color: var(--secondary);" id="report-percentage-badge">
+              95% Attendance
+            </div>
+          </div>
+
+          <!-- Live Dynamic in-app data render target -->
+          <div id="report-visual-table-target">
+            <!-- In-app styled tables rendered by js/app.js -->
+          </div>
+
+          <!-- Collapsible Monospace copyable text preview section -->
+          <details>
+            <summary style="font-size: 0.75rem; font-weight: 800; color: var(--primary); cursor: pointer; margin-top:12px; outline:none; user-select:none;">
+              View Plain Text Report
+            </summary>
+            <pre class="report-text-pre" id="report-text-preview"></pre>
+          </details>
+
+          <!-- WhatsApp share triggers block -->
+          <div class="btn-group-row">
+            
+            <button class="btn-outline" id="btn-share-text">
+              <!-- Custom text share SVG icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8z" />
+                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+              </svg>
+              Share as Text
+            </button>
+
+            <button class="btn-primary" id="btn-share-image" style="background: linear-gradient(135deg, #d4af37, #b28e23);">
+              <!-- Custom image export share SVG icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" fill="#ffffff" />
+                <path d="M21 15l-5-5L5 21" />
+              </svg>
+              Share as Image
+            </button>
+
+          </div>
+        </div>
+
+        <!-- Extra spacing buffer for footer navigation -->
+        <div style="height: 40px;"></div>
+
+      </section>
+
+      <!-- MODULE 4: STUDENTS / CLASSES VIEW -->
+      <section id="students-view" class="app-view">
+        
+        <!-- Toggle Tabs: Students Directory vs Classes Directory -->
+        <div class="report-tabs">
+          <button class="report-tab-btn active" id="tab-student-dir">Students Directory</button>
+          <button class="report-tab-btn" id="tab-class-dir">Classes</button>
+        </div>
+
+        <!-- SUBTAB 1: STUDENTS MANAGEMENT -->
+        <div id="panel-student-dir">
+          
+          <div class="segment-header">
+            <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--primary);" id="student-count-title">Students (0)</h3>
+            <button class="btn-fab" id="btn-add-student-trigger">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+              Add Student
+            </button>
+          </div>
+
+          <!-- Dynamic search and filter row -->
+          <div class="search-container">
+            <svg class="search-icon-svg" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input type="text" id="student-search-box" class="search-input" placeholder="Search by name or roll...">
+          </div>
+
+          <!-- Search quick class filter dropdown -->
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label" for="filter-class-dropdown">Quick Class Filter</label>
+            <select id="filter-class-dropdown" class="form-select">
+              <option value="ALL">Show All Classes</option>
+              <!-- Loaded dynamically -->
+            </select>
+          </div>
+
+          <!-- List of Students rendered dynamically -->
+          <div id="students-list-target">
+            <!-- Loaded dynamically via js/app.js -->
+          </div>
+
+        </div>
+
+        <!-- SUBTAB 2: CLASSES MANAGEMENT -->
+        <div id="panel-class-dir" style="display:none;">
+          
+          <div class="segment-header">
+            <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--primary);">Classes Directory</h3>
+            <button class="btn-fab" id="btn-add-class-trigger">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+              Add Class
+            </button>
+          </div>
+
+          <!-- List of Classes rendered dynamically -->
+          <div id="classes-list-target">
+            <!-- Loaded dynamically via js/app.js -->
+          </div>
+
+        </div>
+
+        <!-- Extra spacing buffer for footer navigation -->
+        <div style="height: 40px;"></div>
+
+      </section>
+
+      <!-- MODULE 5: SETTINGS VIEW -->
+      <section id="settings-view" class="app-view">
+        
+        <!-- Application Settings -->
+        <h3 class="settings-section-title">Madrasa Branding</h3>
+        <div class="card">
+          <div class="form-field">
+            <label class="form-label" for="settings-madrasa-input">Madrasa Name</label>
+            <input type="text" id="settings-madrasa-input" class="input-field">
+          </div>
+          <button class="btn-primary" id="btn-save-settings">
+            <!-- Custom storage floppy SVG icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+              <path d="M17 21v-8H7v8M7 3v5h8" stroke="var(--secondary)" />
+            </svg>
+            Save Configuration
+          </button>
+        </div>
+
+        <!-- Data Backups Management -->
+        <h3 class="settings-section-title">Data Administration</h3>
+        <div class="card" style="display:flex; flex-direction:column; gap:12px;">
+          
+          <button class="btn-outline" id="btn-export-backup">
+            <!-- Custom dynamic upload cloud SVG -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+            </svg>
+            Export Backup (JSON)
+          </button>
+
+          <div>
+            <label class="form-label" style="display:block; margin-bottom:6px;">Import Data Backup</label>
+            <input type="file" id="import-backup-file" accept=".json" style="display:none;">
+            <button class="btn-outline" onclick="document.getElementById('import-backup-file').click()">
+              <!-- Custom download cloud SVG -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Upload & Restore JSON
+            </button>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid var(--border-light); margin: 8px 0;">
+
+          <button class="btn-outline btn-danger-outline" id="btn-reset-db">
+            <!-- Trash warning custom SVG icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
+            </svg>
+            Reset Database & Seed Demo Data
+          </button>
+
+        </div>
+
+        <!-- Application details & credit footer -->
+        <div style="text-align:center; padding: 12px; margin-bottom: 20px;">
+          <p style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">Madrasa Prayer attendance Portal PWA</p>
+          <p style="font-size: 0.65rem; color: var(--secondary); font-weight: 800; letter-spacing:1px; margin-top:2px;">OFFLINE-FIRST HYBRID APP v1.0.0</p>
+        </div>
+
+      </main>
+
+      <!-- FIXED APP NAVIGATION BOTTOM TAB BAR -->
+      <nav class="app-nav">
+        
+        <button class="nav-item active" data-view="home-view">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M12 2L4 7v13a1 1 0 001 1h5v-5h4v5h5a1 1 0 001-1V7l-8-5z" />
+            <path d="M8 7a4 4 0 018 0" stroke="#fbbf24" stroke-width="1.5" />
+          </svg>
+          <span class="nav-label">Home</span>
+        </button>
+
+        <button class="nav-item" data-view="attendance-view">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <rect x="5" y="4" width="14" height="16" rx="2" />
+            <path d="M9 9h6M9 13h6M9 17h4" />
+            <circle cx="12" cy="4" r="1.2" fill="#fbbf24" stroke="#fbbf24" />
+          </svg>
+          <span class="nav-label">Attendance</span>
+        </button>
+
+        <button class="nav-item" data-view="reports-view">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M18 20V10M12 20V4M6 20v-6" />
+            <path d="M4 20h16" />
+            <path d="M4 11s3-3 8-3 8 3 8 3" stroke="#fbbf24" stroke-dasharray="2,2" />
+          </svg>
+          <span class="nav-label">Reports</span>
+        </button>
+
+        <button class="nav-item" data-view="students-view">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 00-3-3.87" stroke="#fbbf24" />
+            <path d="M16 3.13a4 4 0 010 7.75" stroke="#fbbf24" />
+          </svg>
+          <span class="nav-label">Students</span>
+        </button>
+
+        <button class="nav-item" data-view="settings-view">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+          </svg>
+          <span class="nav-label">Settings</span>
+        </button>
+
+      </nav>
+
+    </div>
+
+    <!-- POPUP MODALS IN-APP OVERLAYS -->
+    
+    <!-- MODAL 1: ADD / EDIT CLASS SHEET -->
+    <div class="modal-overlay" id="modal-class">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <h3 class="modal-title" id="modal-class-title">Add New Class</h3>
+          <button class="modal-close" id="modal-class-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modal-class-id">
+          <div class="form-field">
+            <label class="form-label" for="modal-class-name">Class Name</label>
+            <input type="text" id="modal-class-name" class="input-field" placeholder="e.g. Class 1 - Primary">
+          </div>
+          <button class="btn-primary" id="btn-save-class" style="margin-top: 10px;">
+            Save Class
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 2: ADD / EDIT STUDENT SHEET -->
+    <div class="modal-overlay" id="modal-student">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <h3 class="modal-title" id="modal-student-title">Add Student</h3>
+          <button class="modal-close" id="modal-student-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modal-student-id">
+          
+          <div class="form-field">
+            <label class="form-label" for="modal-student-name">Student Full Name</label>
+            <input type="text" id="modal-student-name" class="input-field" placeholder="e.g. Muhammad Ali">
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="modal-student-roll">Roll Number</label>
+            <input type="text" id="modal-student-roll" class="input-field" placeholder="e.g. 101">
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="modal-student-class">Assigned Class</label>
+            <select id="modal-student-class" class="form-select" style="font-size: 0.9rem; padding: 10px 12px;"></select>
+          </div>
+
+          <button class="btn-primary" id="btn-save-student" style="margin-top: 10px;">
+            Save Student Details
+          </button>
+        </div>
+      </div>
+    </div>
+
+  <!-- LOAD MAIN JS MODULES -->
+  <script src="js/storage.js"></script>
+  <script src="js/share.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
