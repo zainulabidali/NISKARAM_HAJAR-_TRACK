@@ -26,8 +26,11 @@ const ShareService = {
     // 1. Get attendance maps and compute aggregates
     const attendanceByPrayer = {};
     const prayerStats = {};
+    let totalStudents = students.length;
     let totalPresentOverall = 0;
-    let totalMarkedOverall = 0;
+    let totalAbsentOverall = 0;
+    let totalLateOverall = 0;
+    let totalLeaveOverall = 0;
 
     prayers.forEach(p => {
       const attMap = window.StorageService.getAttendance(date, reportData.classId, p);
@@ -40,90 +43,65 @@ const ShareService = {
 
       students.forEach(s => {
         const status = attMap[s.id] || '';
-        if (status === 'Present') presentCount++;
-        else if (status === 'Absent') absentCount++;
-        else if (status === 'Late') lateCount++;
-        else if (status === 'Leave') leaveCount++;
-      });
-
-      const totalMarked = presentCount + absentCount + lateCount;
-      const present = presentCount + lateCount;
-      totalPresentOverall += present;
-      totalMarkedOverall += totalMarked;
-
-      prayerStats[p] = {
-        present: presentCount + lateCount
-      };
-    });
-
-    const overallAttendancePercentage = totalMarkedOverall > 0
-      ? Math.round((totalPresentOverall / totalMarkedOverall) * 100)
-      : 0;
-
-    // 2. Evaluate each student
-    const evaluatedStudents = students.map(student => {
-      let attendedCount = 0;
-      let leaveCount = 0;
-      let absentCount = 0;
-
-      prayers.forEach(p => {
-        const status = attendanceByPrayer[p][student.id] || '';
-        if (status === 'Present' || status === 'Late') {
-          attendedCount++;
+        if (status === 'Present') {
+          presentCount++;
+          totalPresentOverall++;
         } else if (status === 'Absent') {
           absentCount++;
+          totalAbsentOverall++;
+        } else if (status === 'Late') {
+          lateCount++;
+          totalLateOverall++;
         } else if (status === 'Leave') {
           leaveCount++;
+          totalLeaveOverall++;
         }
       });
 
-      let overallStatus = 'Absent';
-      let icon = '❌';
-      if (attendedCount === 5) {
-        overallStatus = 'Full Present';
-        icon = '✅';
-      } else if (leaveCount === 5 || (leaveCount > 0 && attendedCount === 0 && absentCount === 0)) {
-        overallStatus = 'Leave';
-        icon = '🟡';
-      } else if (attendedCount > 0 && attendedCount < 5) {
-        overallStatus = 'Partial';
-        icon = '⚠️';
-      } else {
-        overallStatus = 'Absent';
-        icon = '❌';
-      }
-
-      return {
-        ...student,
-        overallStatus,
-        icon
+      prayerStats[p] = {
+        present: presentCount,
+        absent: absentCount,
+        late: lateCount,
+        leave: leaveCount
       };
     });
 
-    const totalStudents = students.length;
-    const totalPresent = evaluatedStudents.filter(s => s.overallStatus === 'Full Present').length;
-    const totalPartial = evaluatedStudents.filter(s => s.overallStatus === 'Partial').length;
-    const totalAbsent = evaluatedStudents.filter(s => s.overallStatus === 'Absent').length;
-    const totalLeave = evaluatedStudents.filter(s => s.overallStatus === 'Leave').length;
+    const activeMarkedOverall = totalPresentOverall + totalAbsentOverall + totalLateOverall;
+    const overallAttendancePercentage = activeMarkedOverall > 0
+      ? Math.round(((totalPresentOverall + totalLateOverall) / activeMarkedOverall) * 100)
+      : 0;
 
-    text += `📋 *DAILY STUDENT ATTENDANCE:*\n`;
-    evaluatedStudents.forEach((s, idx) => {
-      text += `${idx + 1}. Roll ${s.rollNumber} - ${s.name}: ${s.icon} *${s.overallStatus.toUpperCase()}*\n`;
+    text += `📋 *DETAILED DAILY ATTENDANCE SHEET:*\n`;
+    students.forEach((s, idx) => {
+      let rowText = `${idx + 1}. Roll ${s.rollNumber} - ${s.name}: `;
+      const rowStatuses = [];
+      prayers.forEach(p => {
+        const status = attendanceByPrayer[p][s.id] || '';
+        let char = '➖';
+        if (status === 'Present') char = '✅';
+        else if (status === 'Absent') char = '❌';
+        else if (status === 'Late') char = '⚠️';
+        else if (status === 'Leave') char = '🟡';
+        rowStatuses.push(char);
+      });
+      rowText += rowStatuses.join(' ');
+      text += `${rowText}\n`;
     });
     text += `───────────────────\n\n`;
 
-    text += `🕌 *PRAYER PRESENT COUNTS:*\n`;
+    text += `🕌 *PRAYER SUMMARY:*\n`;
     prayers.forEach(p => {
-      text += `*${p}:* ${prayerStats[p].present} present\n`;
+      const stats = prayerStats[p];
+      text += `*${p}:*\n  ✅ Present: ${stats.present}\n  ❌ Absent: ${stats.absent}\n  ⚠️ Late: ${stats.late}\n  🟡 Leave: ${stats.leave}\n`;
     });
     text += `───────────────────\n\n`;
 
-    text += `📊 *DAILY AGGREGATES:*\n`;
+    text += `📊 *OVERALL DAILY STATS:*\n`;
     text += `👥 *Total Students:* ${totalStudents}\n`;
-    text += `✅ *Total Present (Full):* ${totalPresent}\n`;
-    text += `⚠️ *Total Partial:* ${totalPartial}\n`;
-    text += `❌ *Total Absent:* ${totalAbsent}\n`;
-    text += `🟡 *Total Leave:* ${totalLeave}\n`;
+    text += `✅ *Total Present:* ${totalPresentOverall}\n`;
+    text += `❌ *Total Absent:* ${totalAbsentOverall}\n`;
+    text += `⚠️ *Total Late:* ${totalLateOverall}\n`;
+    text += `🟡 *Total Leave:* ${totalLeaveOverall}\n`;
     text += `📈 *Overall Attendance:* ${overallAttendancePercentage}%\n`;
     text += `───────────────────\n`;
     text += `_Generated via Madrasa Namaz App_`;
@@ -174,8 +152,11 @@ const ShareService = {
     // Get attendance maps and compute aggregates
     const attendanceByPrayer = {};
     const prayerStats = {};
+    let totalStudents = students.length;
     let totalPresentOverall = 0;
-    let totalMarkedOverall = 0;
+    let totalAbsentOverall = 0;
+    let totalLateOverall = 0;
+    let totalLeaveOverall = 0;
 
     prayers.forEach(p => {
       const attMap = window.StorageService.getAttendance(date, classId, p);
@@ -188,66 +169,33 @@ const ShareService = {
 
       students.forEach(s => {
         const status = attMap[s.id] || '';
-        if (status === 'Present') presentCount++;
-        else if (status === 'Absent') absentCount++;
-        else if (status === 'Late') lateCount++;
-        else if (status === 'Leave') leaveCount++;
-      });
-
-      const totalMarked = presentCount + absentCount + lateCount;
-      const present = presentCount + lateCount; // late is physically present
-      totalPresentOverall += present;
-      totalMarkedOverall += totalMarked;
-
-      prayerStats[p] = {
-        present: presentCount,
-        late: lateCount
-      };
-    });
-
-    const overallAttendancePercentage = totalMarkedOverall > 0
-      ? Math.round((totalPresentOverall / totalMarkedOverall) * 100)
-      : 0;
-
-    // Evaluate each student overall status
-    const evaluatedStudents = students.map(student => {
-      let attendedCount = 0;
-      let leaveCount = 0;
-      let absentCount = 0;
-
-      prayers.forEach(p => {
-        const status = attendanceByPrayer[p][student.id] || '';
-        if (status === 'Present' || status === 'Late') {
-          attendedCount++;
+        if (status === 'Present') {
+          presentCount++;
+          totalPresentOverall++;
         } else if (status === 'Absent') {
           absentCount++;
+          totalAbsentOverall++;
+        } else if (status === 'Late') {
+          lateCount++;
+          totalLateOverall++;
         } else if (status === 'Leave') {
           leaveCount++;
+          totalLeaveOverall++;
         }
       });
 
-      let overallStatus = 'Absent';
-      if (attendedCount === 5) {
-        overallStatus = 'Full Present';
-      } else if (leaveCount === 5 || (leaveCount > 0 && attendedCount === 0 && absentCount === 0)) {
-        overallStatus = 'Leave';
-      } else if (attendedCount > 0 && attendedCount < 5) {
-        overallStatus = 'Partial';
-      } else {
-        overallStatus = 'Absent';
-      }
-
-      return {
-        ...student,
-        overallStatus
+      prayerStats[p] = {
+        present: presentCount,
+        absent: absentCount,
+        late: lateCount,
+        leave: leaveCount
       };
     });
 
-    const totalStudents = students.length;
-    const totalPresent = evaluatedStudents.filter(s => s.overallStatus === 'Full Present').length;
-    const totalPartial = evaluatedStudents.filter(s => s.overallStatus === 'Partial').length;
-    const totalAbsent = evaluatedStudents.filter(s => s.overallStatus === 'Absent').length;
-    const totalLeave = evaluatedStudents.filter(s => s.overallStatus === 'Leave').length;
+    const activeMarkedOverall = totalPresentOverall + totalAbsentOverall + totalLateOverall;
+    const overallAttendancePercentage = activeMarkedOverall > 0
+      ? Math.round(((totalPresentOverall + totalLateOverall) / activeMarkedOverall) * 100)
+      : 0;
 
     // Create Canvas & dynamic scaling for high DPI sharp rendering
     const canvas = document.createElement('canvas');
@@ -259,7 +207,7 @@ const ShareService = {
     const headerHeight = 160;
     const tableHeaderHeight = 50;
     const tableBodyHeight = Math.max(students.length, 1) * rowHeight;
-    const analyticsHeight = 220;
+    const analyticsHeight = 225;
     const footerHeight = 110;
     
     const totalHeight = headerHeight + tableHeaderHeight + tableBodyHeight + analyticsHeight + footerHeight + 40;
@@ -311,10 +259,10 @@ const ShareService = {
     ctx.font = 'bold 18px sans-serif';
     ctx.fillText('DAILY ATTENDANCE REPORT', width / 2, 92);
 
-    // Draw metadata row in header (Date, Class)
+    // Draw metadata row in header (Date, Class, Student count)
     ctx.fillStyle = '#e2e8f0';
     ctx.font = 'normal 14px sans-serif';
-    ctx.fillText(`Date: ${date}    |    Class: ${className}`, width / 2, 126);
+    ctx.fillText(`Date: ${date}    |    Class: ${className}    |    Students: ${totalStudents}`, width / 2, 126);
 
     // --- DRAW ATTENDANCE TABLE ---
     const tableY = headerHeight + 20;
@@ -324,28 +272,32 @@ const ShareService = {
     ctx.fillRect(40, tableY, 720, tableHeaderHeight);
     
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 13px sans-serif';
+    ctx.font = 'bold 12px sans-serif';
     
     ctx.textAlign = 'center';
-    ctx.fillText('ROLL NO', 90, tableY + 30);
+    ctx.fillText('ROLL', 75, tableY + 30);
     
     ctx.textAlign = 'left';
-    ctx.fillText('STUDENT NAME', 180, tableY + 30);
+    ctx.fillText('STUDENT NAME', 120, tableY + 30);
     
     ctx.textAlign = 'center';
-    ctx.fillText('PRAYER OVERALL', 620, tableY + 30);
+    ctx.fillText('FAJR', 380, tableY + 30);
+    ctx.fillText('DHUHR', 465, tableY + 30);
+    ctx.fillText('ASR', 550, tableY + 30);
+    ctx.fillText('MAGHRIB', 635, tableY + 30);
+    ctx.fillText('ISHA', 720, tableY + 30);
 
     // Table Body rows
     let currentY = tableY + tableHeaderHeight;
     
-    if (evaluatedStudents.length === 0) {
+    if (students.length === 0) {
       ctx.fillStyle = '#4b5563';
       ctx.font = 'italic 15px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('No students registered in this class', width / 2, currentY + 30);
       currentY += rowHeight;
     } else {
-      evaluatedStudents.forEach((student, idx) => {
+      students.forEach((student, idx) => {
         // Alternating row colors
         ctx.fillStyle = idx % 2 === 0 ? '#ffffff' : '#f7f9f8';
         ctx.fillRect(40, currentY, 720, rowHeight);
@@ -358,7 +310,7 @@ const ShareService = {
         // Vertical separators between cells
         ctx.strokeStyle = '#e5e7eb';
         ctx.lineWidth = 0.5;
-        const separators = [140, 500];
+        const separators = [110, 340, 422, 507, 592, 677];
         separators.forEach(sepX => {
           ctx.beginPath();
           ctx.moveTo(sepX, currentY);
@@ -370,16 +322,33 @@ const ShareService = {
         ctx.fillStyle = '#111827';
         ctx.font = 'bold 13px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(student.rollNumber, 90, currentY + 27);
+        ctx.fillText(student.rollNumber, 75, currentY + 27);
 
         // Student Name
         ctx.font = 'bold 13px sans-serif';
         ctx.fillStyle = '#064e3b';
         ctx.textAlign = 'left';
-        ctx.fillText(student.name, 180, currentY + 27);
+        ctx.fillText(student.name, 120, currentY + 27);
 
-        // Overall combined status badge
-        this.drawOverallStatusBadge(ctx, 620, currentY + rowHeight / 2, student.overallStatus);
+        // Status for each prayer
+        const prayerCols = [
+          { p: 'Fajr', x: 380 },
+          { p: 'Dhuhr', x: 465 },
+          { p: 'Asr', x: 550 },
+          { p: 'Maghrib', x: 635 },
+          { p: 'Isha', x: 720 }
+        ];
+
+        ctx.font = 'normal 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        prayerCols.forEach(col => {
+          const status = attendanceByPrayer[col.p][student.id] || '';
+          this.drawTableCellStatus(ctx, col.x, currentY + rowHeight / 2, status);
+        });
+
+        ctx.textBaseline = 'alphabetic';
 
         currentY += rowHeight;
       });
@@ -388,12 +357,12 @@ const ShareService = {
     // --- DRAW ANALYTICS & SUMMARIES ---
     const cardsY = currentY + 25;
 
-    // 1. Left Card: Prayer Present Counts
+    // 1. Left Card: Prayer-wise Summaries (🕌 PRAYER SUMMARY)
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(40, cardsY, 340, 180);
+    ctx.fillRect(40, cardsY, 340, 185);
     ctx.strokeStyle = '#e5e7eb';
     ctx.lineWidth = 1;
-    ctx.strokeRect(40, cardsY, 340, 180);
+    ctx.strokeRect(40, cardsY, 340, 185);
 
     ctx.fillStyle = '#064e3b';
     ctx.fillRect(40, cardsY, 340, 4);
@@ -401,31 +370,34 @@ const ShareService = {
     ctx.fillStyle = '#064e3b';
     ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('🕌 PRAYER PRESENT SUMMARY', 55, cardsY + 25);
+    ctx.fillText('🕌 PRAYER SUMMARY', 55, cardsY + 23);
 
-    let rowY = cardsY + 50;
-    const rowGap = 24;
+    let rowY = cardsY + 48;
+    const rowGap = 26;
+    
     prayers.forEach(p => {
       const stats = prayerStats[p];
+      
+      // Prayer icon and name
       ctx.fillStyle = '#4b5563';
-      ctx.font = 'bold 12px sans-serif';
+      ctx.font = 'bold 11px sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(`🕌 ${p}`, 55, rowY);
       
+      // Prayer counts
       ctx.fillStyle = '#111827';
-      ctx.font = 'bold 12px sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText(`${stats.present + stats.late} present`, 365, rowY);
+      ctx.font = 'normal 11px sans-serif';
+      ctx.fillText(`✅ ${stats.present}   ❌ ${stats.absent}   ⚠️ ${stats.late}   🟡 ${stats.leave}`, 155, rowY);
       
       rowY += rowGap;
     });
 
-    // 2. Right Card: Daily Status Aggregates
+    // 2. Right Card: Overall Summaries (📊 OVERALL DAILY STATS)
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(420, cardsY, 340, 180);
+    ctx.fillRect(420, cardsY, 340, 185);
     ctx.strokeStyle = '#e5e7eb';
     ctx.lineWidth = 1;
-    ctx.strokeRect(420, cardsY, 340, 180);
+    ctx.strokeRect(420, cardsY, 340, 185);
 
     ctx.fillStyle = '#d4af37';
     ctx.fillRect(420, cardsY, 340, 4);
@@ -433,18 +405,18 @@ const ShareService = {
     ctx.fillStyle = '#064e3b';
     ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('📊 DAILY STATUS AGGREGATES', 435, cardsY + 25);
+    ctx.fillText('📊 OVERALL DAILY STATS', 435, cardsY + 23);
 
     const statsList = [
       { label: '👥 Total Students', val: `${totalStudents}` },
-      { label: '✅ Total Present (Full)', val: `${totalPresent}` },
-      { label: '⚠️ Total Partial Attended', val: `${totalPartial}` },
-      { label: '❌ Total Absent', val: `${totalAbsent}` },
-      { label: '🟡 Total Leave', val: `${totalLeave}` },
-      { label: '📈 Overall Attendance %', val: `${overallAttendancePercentage}%` }
+      { label: '✅ Total Present', val: `${totalPresentOverall}` },
+      { label: '❌ Total Absent', val: `${totalAbsentOverall}` },
+      { label: '⚠️ Total Late', val: `${totalLateOverall}` },
+      { label: '🟡 Total Leave', val: `${totalLeaveOverall}` },
+      { label: '📈 Overall Attendance', val: `${overallAttendancePercentage}%` }
     ];
 
-    let statRowY = cardsY + 50;
+    let statRowY = cardsY + 48;
     const statRowGap = 22;
     
     statsList.forEach(stat => {
@@ -462,7 +434,7 @@ const ShareService = {
     });
 
     // --- DRAW FOOTER ---
-    const footerY = cardsY + 180 + 25;
+    const footerY = cardsY + 185 + 25;
     
     // Decorative gold separator line
     ctx.fillStyle = '#d4af37';
@@ -489,59 +461,19 @@ const ShareService = {
     });
   },
 
-  // Helper: Draw rounded overall status badge
-  drawOverallStatusBadge(ctx, x, y, status) {
-    let text = 'Absent';
-    let color = '#ef4444'; // Red
-    let bg = '#fef2f2';
-    let icon = '❌';
+  // Helper: Draw table cell status indicator emoji
+  drawTableCellStatus(ctx, x, y, status) {
+    let icon = '➖';
+    if (status === 'Present') icon = '✅';
+    else if (status === 'Absent') icon = '❌';
+    else if (status === 'Late') icon = '⚠️';
+    else if (status === 'Leave') icon = '🟡';
 
-    if (status === 'Full Present') {
-      text = 'Full Present';
-      color = '#10b981'; // Green
-      bg = '#ecfdf5';
-      icon = '✅';
-    } else if (status === 'Partial') {
-      text = 'Partial';
-      color = '#f59e0b'; // Gold
-      bg = '#fffbeb';
-      icon = '⚠️';
-    } else if (status === 'Leave') {
-      text = 'Leave';
-      color = '#6b7280'; // Slate Gray
-      bg = '#f3f4f6';
-      icon = '🟡';
-    }
-
-    ctx.save();
-    
-    // Draw rounded badge block
-    const badgeWidth = 140;
-    const badgeHeight = 26;
-    const rx = x - badgeWidth / 2;
-    const ry = y - badgeHeight / 2;
-    
-    ctx.fillStyle = bg;
-    ctx.beginPath();
-    if (ctx.roundRect) {
-      ctx.roundRect(rx, ry, badgeWidth, badgeHeight, 6);
-    } else {
-      ctx.rect(rx, ry, badgeWidth, badgeHeight);
-    }
-    ctx.fill();
-    
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(rx, ry, badgeWidth, badgeHeight);
-    
-    // Draw emoji icon + Text inside badge
-    ctx.fillStyle = color;
-    ctx.font = 'bold 11px sans-serif';
+    ctx.fillStyle = '#111827';
+    ctx.font = '14px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`${icon} ${text.toUpperCase()}`, x, y);
-    
-    ctx.restore();
+    ctx.fillText(icon, x, y);
   },
 
   // --- WHATSAPP SHARING ENGINE WITH WEB SHARE API ---

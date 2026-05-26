@@ -25,22 +25,38 @@
 
   <div class="app-container">
     
-    <!-- PWA Custom Add to Home Screen Banner -->
-    <div id="pwa-install-banner" class="pwa-banner">
+    <!-- Android PWA Fixed Top Install Banner -->
+    <div id="pwa-android-banner" class="pwa-banner">
       <div class="pwa-banner-content">
-        <!-- SVG mini mosque logo -->
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pwa-banner-logo" style="background:#053e2f; padding:4px;">
-          <path d="M12 2L4 7v13a1 1 0 001 1h5v-5h4v5h5a1 1 0 001-1V7l-8-5z" />
-          <path d="M8 7a4 4 0 018 0" stroke-width="1.5" />
-        </svg>
-        <div>
-          <div style="font-weight: 800; font-size: 0.85rem;">Madrasa Namaz App</div>
-          <div style="font-size: 0.7rem; color: #fbbf24; font-weight: 500;">Add to Home Screen for Native Feel</div>
+        <div class="pwa-banner-icon">📱</div>
+        <div class="pwa-banner-text">
+          <div class="pwa-banner-title">Install App</div>
+          <div class="pwa-banner-desc">Install this app for faster access and a better experience</div>
         </div>
       </div>
       <div class="pwa-banner-buttons">
-        <button id="pwa-install-btn" class="btn-pwa-install">Install</button>
-        <button id="pwa-install-close" class="btn-pwa-close">&times;</button>
+        <button id="btn-android-install" class="btn-pwa-install">Install Now</button>
+        <button id="btn-android-close" class="btn-pwa-close">&times;</button>
+      </div>
+    </div>
+
+    <!-- iOS PWA Fixed Top Install Banner -->
+    <div id="pwa-ios-banner" class="pwa-banner ios-pwa-banner">
+      <div class="pwa-banner-header">
+        <div class="pwa-banner-icon">📱</div>
+        <div class="pwa-banner-text">
+          <div class="pwa-banner-title">Install App on iPhone</div>
+          <div class="pwa-banner-desc">Tap Share &rarr; Add to Home Screen</div>
+        </div>
+        <button id="btn-ios-close" class="btn-pwa-close">&times;</button>
+      </div>
+      <div class="pwa-ios-steps">
+        <div class="pwa-ios-step"><span>1</span> Tap Share icon</div>
+        <div class="pwa-ios-step"><span>2</span> Select "Add to Home Screen"</div>
+        <div class="pwa-ios-step"><span>3</span> Tap Add</div>
+      </div>
+      <div class="pwa-ios-footer">
+        <button id="btn-ios-gotit" class="btn-pwa-install" style="width: 100px;">Got It</button>
       </div>
     </div>
 

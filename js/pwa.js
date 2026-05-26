@@ -10,31 +10,88 @@ if ('serviceWorker' in navigator) {
 // Global PWA installation handling
 let deferredPrompt;
 
-window.addEventListener('beforeinstallprompt', (e) => {
-  // Prevent Chrome 67 and earlier from automatically showing the prompt
-  e.preventDefault();
-  // Stash the event so it can be triggered later.
-  deferredPrompt = e;
-  
-  // Show our custom Install Banner
-  const installBanner = document.getElementById('pwa-install-banner');
-  if (installBanner) {
-    installBanner.classList.add('visible');
-  }
-});
+// Check if app is already running in standalone mode (installed)
+const isStandalone = () => {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+};
+
+// Check if installation prompt has been dismissed previously
+const isDismissed = () => {
+  return localStorage.getItem('pwa_install_dismissed') === 'true';
+};
+
+// Detect iOS devices (iPhone, iPad, iPod)
+const isIOSDevice = () => {
+  return /Macintosh|iPad|iPhone|iPod/.test(navigator.userAgent) && ('ontouchend' in document);
+};
 
 // Setup PWA event listeners when DOM loads
 document.addEventListener('DOMContentLoaded', () => {
-  const installBtn = document.getElementById('pwa-install-btn');
-  const closeBtn = document.getElementById('pwa-install-close');
-  const installBanner = document.getElementById('pwa-install-banner');
+  const androidBanner = document.getElementById('pwa-android-banner');
+  const iosBanner = document.getElementById('pwa-ios-banner');
+  
+  const btnAndroidInstall = document.getElementById('btn-android-install');
+  const btnAndroidClose = document.getElementById('btn-android-close');
+  
+  const btnIosClose = document.getElementById('btn-ios-close');
+  const btnIosGotit = document.getElementById('btn-ios-gotit');
 
-  if (installBtn) {
-    installBtn.addEventListener('click', () => {
+  // Helper to hide all banners
+  const hideAllBanners = () => {
+    if (androidBanner) androidBanner.classList.remove('visible');
+    if (iosBanner) iosBanner.classList.remove('visible');
+  };
+
+  // Helper to dismiss installer permanently
+  const dismissInstaller = () => {
+    localStorage.setItem('pwa_install_dismissed', 'true');
+    hideAllBanners();
+  };
+
+  // If already installed or dismissed, do nothing
+  if (isStandalone() || isDismissed()) {
+    console.log('PWA: Already running standalone or installation dismissed.');
+    return;
+  }
+
+  // iOS-specific guidance workflow
+  if (isIOSDevice()) {
+    console.log('PWA: iOS platform detected, displaying instruction banner.');
+    if (iosBanner) {
+      iosBanner.classList.add('visible');
+    }
+
+    if (btnIosClose) {
+      btnIosClose.addEventListener('click', dismissInstaller);
+    }
+    if (btnIosGotit) {
+      btnIosGotit.addEventListener('click', dismissInstaller);
+    }
+    return; // Stop here, iOS doesn't trigger beforeinstallprompt
+  }
+
+  // Android/Desktop browser beforeinstallprompt handling
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent default browser install banner/prompts
+    e.preventDefault();
+    // Stash the event so it can be triggered later.
+    deferredPrompt = e;
+    
+    // Double check again that user hasn't dismissed or installed during the session
+    if (!isStandalone() && !isDismissed()) {
+      console.log('PWA: Android/Desktop browser beforeinstallprompt fired. Showing custom banner.');
+      if (androidBanner) {
+        androidBanner.classList.add('visible');
+      }
+    }
+  });
+
+  if (btnAndroidInstall) {
+    btnAndroidInstall.addEventListener('click', () => {
       if (!deferredPrompt) return;
       
       // Hide our custom banner
-      if (installBanner) installBanner.classList.remove('visible');
+      hideAllBanners();
       
       // Show the native browser prompt
       deferredPrompt.prompt();
@@ -42,19 +99,18 @@ document.addEventListener('DOMContentLoaded', () => {
       // Wait for the user to respond to the prompt
       deferredPrompt.userChoice.then((choiceResult) => {
         if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the PWA install prompt');
+          console.log('PWA: User accepted install prompt');
+          localStorage.setItem('pwa_install_dismissed', 'true');
         } else {
-          console.log('User dismissed the PWA install prompt');
+          console.log('PWA: User dismissed install prompt');
         }
         deferredPrompt = null;
       });
     });
   }
 
-  if (closeBtn && installBanner) {
-    closeBtn.addEventListener('click', () => {
-      installBanner.classList.remove('visible');
-    });
+  if (btnAndroidClose) {
+    btnAndroidClose.addEventListener('click', dismissInstaller);
   }
 
   // Monitor network status
@@ -77,9 +133,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.addEventListener('appinstalled', (evt) => {
-  console.log('Madrasa Attendance PWA installed successfully');
-  const installBanner = document.getElementById('pwa-install-banner');
-  if (installBanner) {
-    installBanner.classList.remove('visible');
+  console.log('PWA: Madrasa Attendance PWA installed successfully');
+  localStorage.setItem('pwa_install_dismissed', 'true');
+  const androidBanner = document.getElementById('pwa-android-banner');
+  if (androidBanner) {
+    androidBanner.classList.remove('visible');
   }
 });
