@@ -70,7 +70,6 @@ const App = {
       formMonthlyFields: document.getElementById('form-monthly-report-fields'),
       repDailyDate: document.getElementById('report-daily-date'),
       repDailyClass: document.getElementById('report-daily-class'),
-      repDailyPrayer: document.getElementById('report-daily-prayer'),
       repMonthlyClass: document.getElementById('report-monthly-class'),
       repMonthlyMonth: document.getElementById('report-monthly-month'),
       repMonthlyYear: document.getElementById('report-monthly-year'),
@@ -605,62 +604,158 @@ const App = {
   generateDailyReport() {
     const classId = this.nodes.repDailyClass.value;
     const date = this.nodes.repDailyDate.value;
-    const prayer = this.nodes.repDailyPrayer.value;
 
     if (!classId) {
       alert('Please create a Class first.');
       return;
     }
 
-    const report = window.StorageService.getDailyReport(date, classId, prayer);
+    const students = window.StorageService.getStudentsByClass(classId);
+    const prayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+
+    const attendanceByPrayer = {};
+    const prayerStats = {};
+    let totalPresentOverall = 0;
+    let totalAbsentOverall = 0;
+    let totalLateOverall = 0;
+    let totalLeaveOverall = 0;
+
+    prayers.forEach(p => {
+      const attMap = window.StorageService.getAttendance(date, classId, p);
+      attendanceByPrayer[p] = attMap;
+
+      let pCount = 0, aCount = 0, lCount = 0, lvCount = 0;
+      students.forEach(s => {
+        const status = attMap[s.id] || '';
+        if (status === 'Present') { pCount++; totalPresentOverall++; }
+        else if (status === 'Absent') { aCount++; totalAbsentOverall++; }
+        else if (status === 'Late') { lCount++; totalLateOverall++; }
+        else if (status === 'Leave') { lvCount++; totalLeaveOverall++; }
+      });
+
+      prayerStats[p] = {
+        present: pCount,
+        absent: aCount,
+        late: lCount,
+        leave: lvCount
+      };
+    });
+
+    const activeMarkedOverall = totalPresentOverall + totalAbsentOverall + totalLateOverall;
+    const overallAttendancePercentage = activeMarkedOverall > 0
+      ? Math.round(((totalPresentOverall + totalLateOverall) / activeMarkedOverall) * 100)
+      : 0;
+
+    const report = {
+      classId,
+      date,
+      totalStudents: students.length,
+      totalPresent: totalPresentOverall,
+      totalAbsent: totalAbsentOverall,
+      totalLate: totalLateOverall,
+      totalLeave: totalLeaveOverall,
+      overallAttendancePercentage,
+      prayerStats,
+      attendanceByPrayer
+    };
+
     this.state.reports.generatedData = { type: 'daily', report };
 
     // Format Badge Text
-    this.nodes.repPctBadge.innerText = `${report.attendancePercentage}% Present`;
-    this.nodes.repPctBadge.style.color = report.attendancePercentage > 75 ? 'var(--color-present)' : 'var(--color-absent)';
+    this.nodes.repPctBadge.innerText = `${overallAttendancePercentage}% Attendance`;
+    this.nodes.repPctBadge.style.color = overallAttendancePercentage > 75 ? 'var(--color-present)' : 'var(--color-absent)';
 
-    // Visual breakdown Table Render
-    const students = [
-      ...report.presentList.map(s => ({...s, status: 'Present'})),
-      ...report.lateList.map(s => ({...s, status: 'Late'})),
-      ...report.leaveList.map(s => ({...s, status: 'Leave'})),
-      ...report.absentList.map(s => ({...s, status: 'Absent'}))
-    ];
-
-    let html = `
-      <div style="font-size:0.8rem; margin-bottom:12px; display:flex; flex-direction:column; gap:4px;">
-        <div><strong>Total Students:</strong> ${report.totalStudents}</div>
-        <div><strong>Marked:</strong> Present (${report.presentCount}), Late (${report.lateCount}), Absent (${report.absentCount}), Leave (${report.leaveCount})</div>
-      </div>
+    // Render Table HTML
+    let tableHtml = `
       <div class="table-scroll">
         <table class="report-table">
           <thead>
             <tr>
-              <th>Roll</th>
+              <th style="text-align:center;">Roll</th>
               <th>Student Name</th>
-              <th style="text-align:center;">Status</th>
+              <th style="text-align:center;">Fajr</th>
+              <th style="text-align:center;">Dhuhr</th>
+              <th style="text-align:center;">Asr</th>
+              <th style="text-align:center;">Maghrib</th>
+              <th style="text-align:center;">Isha</th>
             </tr>
           </thead>
           <tbody>
     `;
 
     if (students.length === 0) {
-      html += `<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">No student attendance marked.</td></tr>`;
+      tableHtml += `<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No student attendance marked.</td></tr>`;
     } else {
       students.forEach(student => {
-        const badgeClass = student.status.toLowerCase();
-        html += `
+        tableHtml += `
           <tr>
-            <td><strong>${student.rollNumber}</strong></td>
-            <td>${student.name}</td>
-            <td style="text-align:center;"><span class="badge ${badgeClass}">${student.status[0]}</span></td>
-          </tr>
+            <td style="text-align:center;"><strong>${student.rollNumber}</strong></td>
+            <td style="font-weight:700; color:var(--primary);">${student.name}</td>
         `;
+        prayers.forEach(p => {
+          const status = attendanceByPrayer[p][student.id] || '';
+          let icon = '➖';
+          let badgeClass = 'unmarked';
+          
+          if (status === 'Present') { icon = '✅'; badgeClass = 'present'; }
+          else if (status === 'Absent') { icon = '❌'; badgeClass = 'absent'; }
+          else if (status === 'Late') { icon = '⚠️'; badgeClass = 'late'; }
+          else if (status === 'Leave') { icon = '🟡'; badgeClass = 'leave'; }
+          
+          tableHtml += `<td style="text-align:center; font-size:1.1rem;">${icon}</td>`;
+        });
+        tableHtml += `</tr>`;
       });
     }
 
-    html += `</tbody></table></div>`;
-    this.nodes.repVisualTarget.innerHTML = html;
+    tableHtml += `</tbody></table></div>`;
+
+    // Render Prayer Summary and Overall stats inside the target container HTML
+    let summaryHtml = `
+      <div style="margin-top: 18px; display: grid; grid-template-columns: 1fr; gap: 14px;">
+        <!-- Left block: Prayer Summary -->
+        <div style="background: rgba(6, 78, 59, 0.03); border: 1px solid var(--border-light); border-radius: 12px; padding: 14px;">
+          <h4 style="font-size: 0.85rem; font-weight: 800; color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+            🕌 Prayer Summary
+          </h4>
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.8rem;">
+    `;
+
+    prayers.forEach(p => {
+      const stats = prayerStats[p];
+      summaryHtml += `
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 6px;">
+          <strong style="color: var(--text-dark);">${p}</strong>
+          <span style="font-weight: 600; color: var(--text-muted);">
+            ✅ ${stats.present}   ❌ ${stats.absent}   ⚠️ ${stats.late}   🟡 ${stats.leave}
+          </span>
+        </div>
+      `;
+    });
+
+    summaryHtml += `
+          </div>
+        </div>
+
+        <!-- Right block: Overall Statistics -->
+        <div style="background: rgba(212, 175, 55, 0.03); border: 1px solid var(--border-light); border-radius: 12px; padding: 14px;">
+          <h4 style="font-size: 0.85rem; font-weight: 800; color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+            📊 Overall Daily Stats
+          </h4>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 0.8rem; font-weight: 700; color: var(--text-dark);">
+            <div style="border-bottom:1px solid var(--border-light); padding-bottom:4px;">👥 Students: <span style="color:var(--primary); font-weight:800;">${report.totalStudents}</span></div>
+            <div style="border-bottom:1px solid var(--border-light); padding-bottom:4px;">✅ Present: <span style="color:var(--color-present); font-weight:800;">${report.totalPresent}</span></div>
+            <div style="border-bottom:1px solid var(--border-light); padding-bottom:4px;">❌ Absent: <span style="color:var(--color-absent); font-weight:800;">${report.totalAbsent}</span></div>
+            <div style="border-bottom:1px solid var(--border-light); padding-bottom:4px;">⚠️ Late: <span style="color:var(--color-late); font-weight:800;">${report.totalLate}</span></div>
+            <div style="border-bottom:1px solid var(--border-light); padding-bottom:4px; grid-column: span 2;">🟡 Leave: <span style="color:var(--color-leave); font-weight:800;">${report.totalLeave}</span></div>
+            <div style="grid-column: span 2; font-size: 0.9rem; color: var(--primary); margin-top: 4px;">📈 Overall Attendance: <span style="font-weight:900;">${report.overallAttendancePercentage}%</span></div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Put everything inside the target container!
+    this.nodes.repVisualTarget.innerHTML = tableHtml + summaryHtml;
 
     // Plain text compiled target
     const textReport = window.ShareService.generateDailyTextReport(report);

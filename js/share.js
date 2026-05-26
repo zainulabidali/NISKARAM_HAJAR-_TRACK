@@ -145,7 +145,6 @@ const ShareService = {
     const date = reportData.date;
     const className = this.getClassName(classId);
     
-    // Fetch all students in the class
     const students = window.StorageService.getStudentsByClass(classId);
     const prayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 
@@ -197,23 +196,113 @@ const ShareService = {
       ? Math.round(((totalPresentOverall + totalLateOverall) / activeMarkedOverall) * 100)
       : 0;
 
-    // Create Canvas & dynamic scaling for high DPI sharp rendering
+    // --- BULLETPROOF CHUNKING FALLBACK FOR LARGE CLASSES ---
+    // If student list exceeds a safe paging threshold, chunk to prevent canvas memory/sizing crashes.
+    const PAGE_SIZE = 30;
+    
+    if (students.length > PAGE_SIZE) {
+      console.log(`PWA: Roster size (${students.length}) exceeds ${PAGE_SIZE}. Generating in chunks.`);
+      
+      const totalPages = Math.ceil(students.length / PAGE_SIZE);
+      let firstPageBlob = null;
+      
+      for (let pIndex = 0; pIndex < totalPages; pIndex++) {
+        const chunk = students.slice(pIndex * PAGE_SIZE, (pIndex + 1) * PAGE_SIZE);
+        const pageBlob = await this.renderSinglePageCanvas(
+          settings,
+          className,
+          date,
+          chunk,
+          prayers,
+          attendanceByPrayer,
+          prayerStats,
+          totalStudents,
+          totalPresentOverall,
+          totalAbsentOverall,
+          totalLateOverall,
+          totalLeaveOverall,
+          overallAttendancePercentage,
+          pIndex + 1,
+          totalPages
+        );
+        
+        if (pIndex === 0) {
+          firstPageBlob = pageBlob;
+        } else {
+          // Immediately trigger download for subsequent pages
+          try {
+            const url = URL.createObjectURL(pageBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `daily_report_page_${pIndex + 1}_of_${totalPages}_${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+          } catch (e) {
+            console.error('Failed to download chunk page:', e);
+          }
+        }
+      }
+      
+      // Return first page blob to pass to the share dialog
+      return firstPageBlob;
+    } else {
+      // Standard single-page draw
+      return this.renderSinglePageCanvas(
+        settings,
+        className,
+        date,
+        students,
+        prayers,
+        attendanceByPrayer,
+        prayerStats,
+        totalStudents,
+        totalPresentOverall,
+        totalAbsentOverall,
+        totalLateOverall,
+        totalLeaveOverall,
+        overallAttendancePercentage,
+        1,
+        1
+      );
+    }
+  },
+
+  // Helper method: Renders a single canvas page chunk safely
+  async renderSinglePageCanvas(
+    settings,
+    className,
+    date,
+    studentsChunk,
+    prayers,
+    attendanceByPrayer,
+    prayerStats,
+    totalStudents,
+    totalPresentOverall,
+    totalAbsentOverall,
+    totalLateOverall,
+    totalLeaveOverall,
+    overallAttendancePercentage,
+    currentPage,
+    totalPages
+  ) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // Dynamic height calculation based on student count
-    const width = 800; // Perfect mobile aspect ratio card width
+    // Width and dynamic height
+    const width = 800;
     const rowHeight = 44;
     const headerHeight = 160;
     const tableHeaderHeight = 50;
-    const tableBodyHeight = Math.max(students.length, 1) * rowHeight;
+    const tableBodyHeight = Math.max(studentsChunk.length, 1) * rowHeight;
     const analyticsHeight = 225;
     const footerHeight = 110;
     
     const totalHeight = headerHeight + tableHeaderHeight + tableBodyHeight + analyticsHeight + footerHeight + 40;
 
-    // Set high pixel density
-    const dpr = 2; // Generate at 2x resolution
+    // Set high-DPI scaling (2x)
+    const dpr = 2;
     canvas.width = width * dpr;
     canvas.height = totalHeight * dpr;
     canvas.style.width = width + 'px';
@@ -221,53 +310,55 @@ const ShareService = {
     ctx.scale(dpr, dpr);
 
     // --- DRAW BACKGROUND ---
-    ctx.fillStyle = '#ffffff'; // White premium background
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, totalHeight);
 
-    // Green outer frame border
-    ctx.strokeStyle = '#064e3b'; // Deep emerald
+    // Deep forest green outer frame
+    ctx.strokeStyle = '#064e3b';
     ctx.lineWidth = 5;
     ctx.strokeRect(12, 12, width - 24, totalHeight - 24);
 
     // Gold inner thin border
-    ctx.strokeStyle = '#d4af37'; // Antique gold
+    ctx.strokeStyle = '#d4af37';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(18, 18, width - 36, totalHeight - 36);
 
-    // --- DRAW GREEN HEADER BLOCK ---
+    // --- DRAW EMERALD HEADER ---
     const headerWidth = width - 32;
     const headerBgGrad = ctx.createLinearGradient(16, 16, width - 16, 16);
-    headerBgGrad.addColorStop(0, '#064e3b'); // Emerald
+    headerBgGrad.addColorStop(0, '#064e3b');
     headerBgGrad.addColorStop(1, '#0a5c45');
     ctx.fillStyle = headerBgGrad;
     ctx.fillRect(16, 16, headerWidth, headerHeight - 16);
 
-    // Islamic patterned gold horizontal line underneath the header
+    // Gold decorative horizontal divider
     ctx.fillStyle = '#d4af37';
     ctx.fillRect(16, headerHeight - 4, headerWidth, 4);
 
-    // Header Texts
+    // Header labels
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     
-    // Madrasa Name
     ctx.font = 'bold 26px sans-serif';
     ctx.fillText(settings.madrasaName.toUpperCase(), width / 2, 58);
 
-    // Report Subtitle
-    ctx.fillStyle = '#fbbf24'; // Champagne gold
+    // Report subtitle (appends page indexes if paginated)
+    ctx.fillStyle = '#fbbf24';
     ctx.font = 'bold 18px sans-serif';
-    ctx.fillText('DAILY ATTENDANCE REPORT', width / 2, 92);
+    const subtitle = totalPages > 1 
+      ? `DAILY ATTENDANCE REPORT (PAGE ${currentPage} OF ${totalPages})`
+      : 'DAILY ATTENDANCE REPORT';
+    ctx.fillText(subtitle, width / 2, 92);
 
-    // Draw metadata row in header (Date, Class, Student count)
+    // Metadata line
     ctx.fillStyle = '#e2e8f0';
     ctx.font = 'normal 14px sans-serif';
     ctx.fillText(`Date: ${date}    |    Class: ${className}    |    Students: ${totalStudents}`, width / 2, 126);
 
-    // --- DRAW ATTENDANCE TABLE ---
+    // --- DRAW DETAILED TABLE ---
     const tableY = headerHeight + 20;
     
-    // Table Header Background
+    // Header
     ctx.fillStyle = '#064e3b';
     ctx.fillRect(40, tableY, 720, tableHeaderHeight);
     
@@ -287,27 +378,27 @@ const ShareService = {
     ctx.fillText('MAGHRIB', 635, tableY + 30);
     ctx.fillText('ISHA', 720, tableY + 30);
 
-    // Table Body rows
+    // Roster rows
     let currentY = tableY + tableHeaderHeight;
     
-    if (students.length === 0) {
+    if (studentsChunk.length === 0) {
       ctx.fillStyle = '#4b5563';
       ctx.font = 'italic 15px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('No students registered in this class', width / 2, currentY + 30);
       currentY += rowHeight;
     } else {
-      students.forEach((student, idx) => {
-        // Alternating row colors
+      studentsChunk.forEach((student, idx) => {
+        // Alternating color strips
         ctx.fillStyle = idx % 2 === 0 ? '#ffffff' : '#f7f9f8';
         ctx.fillRect(40, currentY, 720, rowHeight);
 
-        // Thin horizontal bottom separator
+        // Underline border
         ctx.strokeStyle = '#e5e7eb';
         ctx.lineWidth = 1;
         ctx.strokeRect(40, currentY, 720, rowHeight);
 
-        // Vertical separators between cells
+        // Vertical divider alignments
         ctx.strokeStyle = '#e5e7eb';
         ctx.lineWidth = 0.5;
         const separators = [110, 340, 422, 507, 592, 677];
@@ -330,8 +421,8 @@ const ShareService = {
         ctx.textAlign = 'left';
         ctx.fillText(student.name, 120, currentY + 27);
 
-        // Status for each prayer
-        const prayerCols = [
+        // Column status cells
+        const columns = [
           { p: 'Fajr', x: 380 },
           { p: 'Dhuhr', x: 465 },
           { p: 'Asr', x: 550 },
@@ -343,7 +434,7 @@ const ShareService = {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        prayerCols.forEach(col => {
+        columns.forEach(col => {
           const status = attendanceByPrayer[col.p][student.id] || '';
           this.drawTableCellStatus(ctx, col.x, currentY + rowHeight / 2, status);
         });
@@ -357,7 +448,7 @@ const ShareService = {
     // --- DRAW ANALYTICS & SUMMARIES ---
     const cardsY = currentY + 25;
 
-    // 1. Left Card: Prayer-wise Summaries (🕌 PRAYER SUMMARY)
+    // 1. Left Card: Mosque Prayer Summary (🕌 PRAYER SUMMARY)
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(40, cardsY, 340, 185);
     ctx.strokeStyle = '#e5e7eb';
@@ -377,14 +468,11 @@ const ShareService = {
     
     prayers.forEach(p => {
       const stats = prayerStats[p];
-      
-      // Prayer icon and name
       ctx.fillStyle = '#4b5563';
       ctx.font = 'bold 11px sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(`🕌 ${p}`, 55, rowY);
       
-      // Prayer counts
       ctx.fillStyle = '#111827';
       ctx.font = 'normal 11px sans-serif';
       ctx.fillText(`✅ ${stats.present}   ❌ ${stats.absent}   ⚠️ ${stats.late}   🟡 ${stats.leave}`, 155, rowY);
@@ -392,7 +480,7 @@ const ShareService = {
       rowY += rowGap;
     });
 
-    // 2. Right Card: Overall Summaries (📊 OVERALL DAILY STATS)
+    // 2. Right Card: Overall Daily Stats (📊 OVERALL DAILY STATS)
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(420, cardsY, 340, 185);
     ctx.strokeStyle = '#e5e7eb';
@@ -436,7 +524,6 @@ const ShareService = {
     // --- DRAW FOOTER ---
     const footerY = cardsY + 185 + 25;
     
-    // Decorative gold separator line
     ctx.fillStyle = '#d4af37';
     ctx.fillRect(40, footerY - 5, 720, 2);
 
@@ -453,7 +540,7 @@ const ShareService = {
     ctx.font = 'normal 10px sans-serif';
     ctx.fillText('Generated via Madrasa Namaz App', width / 2, footerY + 68);
 
-    // Return canvas as blob
+    // Return as blob promise
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         resolve(blob);
@@ -478,7 +565,24 @@ const ShareService = {
 
   // --- WHATSAPP SHARING ENGINE WITH WEB SHARE API ---
   async shareReport(textReport, imageBlob = null, title = 'Prayer Report') {
-    // 1. First, check if Web Share API is available with File support
+    // 1. PRIMARY BULLETPROOF DISPATCH: Always download the file directly to PWA downloads folder
+    if (imageBlob) {
+      try {
+        const url = URL.createObjectURL(imageBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${title.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now()}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        // Delay URL revocation slightly to ensure memory stream starts safely
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+      } catch (err) {
+        console.error('PWA: Auto-download trigger error:', err);
+      }
+    }
+
+    // 2. NATIVE WEB SHARE PROMPT (For iOS Safari or native mobile browsers with file share support)
     if (navigator.share) {
       try {
         const shareData = {
@@ -488,7 +592,6 @@ const ShareService = {
 
         if (imageBlob) {
           const imageFile = new File([imageBlob], 'namaz_report.png', { type: 'image/png' });
-          
           if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
             shareData.files = [imageFile];
           }
@@ -497,34 +600,18 @@ const ShareService = {
         await navigator.share(shareData);
         return { success: true, method: 'web-share' };
       } catch (err) {
-        // User canceled share sheet, do not trigger fallback in that case unless it's a real failure
         if (err.name !== 'AbortError') {
-          console.error('Web Share failed, attempting fallback...', err);
+          console.error('PWA: Web Share prompt error, using fallback...', err);
         } else {
           return { success: false, method: 'canceled' };
         }
       }
     }
 
-    // 2. FALLBACK 1: If it's an image, download it automatically
-    if (imageBlob) {
-      const url = URL.createObjectURL(imageBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${title.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    // 3. FALLBACK 2: Open WhatsApp directly with text
+    // 3. WHATSAPP WEB REDIRECT FALLBACK (For desktop or web clients without native sharing)
     const cleanText = encodeURIComponent(textReport);
-    
-    // Attempt mobile application custom protocol first, fallback to web api
     let whatsappUrl = `https://api.whatsapp.com/send?text=${cleanText}`;
     
-    // Open in new tab
     const newTab = window.open(whatsappUrl, '_blank');
     if (newTab) {
       newTab.focus();
