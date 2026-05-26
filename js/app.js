@@ -742,7 +742,7 @@ const App = {
 
     if (data.type === 'daily') {
       text = window.ShareService.generateDailyTextReport(data.report);
-      title = `Daily Namaz Report - ${data.report.prayer}`;
+      title = `Daily Attendance Report - Full-Day`;
     } else {
       text = window.ShareService.generateMonthlyTextReport(data.report);
       title = `Monthly Namaz Summary`;
@@ -770,7 +770,7 @@ const App = {
 
     try {
       const text = window.ShareService.generateDailyTextReport(data.report);
-      const title = `Daily Attendance Report - ${data.report.prayer}`;
+      const title = `Daily Attendance Report - Full-Day`;
       
       // Draw dynamically in background canvas & convert to blob PNG
       const blob = await window.ShareService.generateDailyImageReport(data.report);
