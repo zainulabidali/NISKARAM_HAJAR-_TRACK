@@ -78,8 +78,6 @@ const App = {
       repResultCard: document.getElementById('report-result-card'),
       repPctBadge: document.getElementById('report-percentage-badge'),
       repVisualTarget: document.getElementById('report-visual-table-target'),
-      repTextPreview: document.getElementById('report-text-preview'),
-      btnShareText: document.getElementById('btn-share-text'),
       btnShareImage: document.getElementById('btn-share-image'),
 
       // Students / Directory Elements
@@ -218,10 +216,6 @@ const App = {
     }
 
     // Share triggers
-    if (this.nodes.btnShareText) {
-      this.nodes.btnShareText.addEventListener('click', () => this.shareReportText());
-    }
-
     if (this.nodes.btnShareImage) {
       this.nodes.btnShareImage.addEventListener('click', () => this.shareReportImage());
     }
@@ -757,10 +751,6 @@ const App = {
     // Put everything inside the target container!
     this.nodes.repVisualTarget.innerHTML = tableHtml + summaryHtml;
 
-    // Plain text compiled target
-    const textReport = window.ShareService.generateDailyTextReport(report);
-    this.nodes.repTextPreview.innerText = textReport;
-
     // Slide down display card
     this.nodes.repResultCard.classList.add('visible');
     this.nodes.repResultCard.scrollIntoView({ behavior: 'smooth' });
@@ -821,32 +811,8 @@ const App = {
     html += `</tbody></table></div>`;
     this.nodes.repVisualTarget.innerHTML = html;
 
-    const textReport = window.ShareService.generateMonthlyTextReport(report);
-    this.nodes.repTextPreview.innerText = textReport;
-
     this.nodes.repResultCard.classList.add('visible');
     this.nodes.repResultCard.scrollIntoView({ behavior: 'smooth' });
-  },
-
-  async shareReportText() {
-    const data = this.state.reports.generatedData;
-    if (!data) return;
-
-    let text = '';
-    let title = '';
-
-    if (data.type === 'daily') {
-      text = window.ShareService.generateDailyTextReport(data.report);
-      title = `Daily Attendance Report - Full-Day`;
-    } else {
-      text = window.ShareService.generateMonthlyTextReport(data.report);
-      title = `Monthly Namaz Summary`;
-    }
-
-    const res = await window.ShareService.shareReport(text, null, title);
-    if (res.success) {
-      console.log('Report shared via:', res.method);
-    }
   },
 
   async shareReportImage() {
@@ -864,18 +830,16 @@ const App = {
     this.nodes.btnShareImage.innerText = 'Generating image...';
 
     try {
-      const text = window.ShareService.generateDailyTextReport(data.report);
       const title = `Daily Attendance Report - Full-Day`;
       
       // Draw dynamically in background canvas & convert to blob PNG
       const blob = await window.ShareService.generateDailyImageReport(data.report);
       
       // Call system share API
-      await window.ShareService.shareReport(text, blob, title);
+      await window.ShareService.shareReport("", blob, title);
     } catch (e) {
       console.error('Image generator share failure:', e);
-      alert('Error rendering report card image. Falling back to plain text.');
-      this.shareReportText();
+      alert('Error rendering or saving report card image.');
     } finally {
       this.nodes.btnShareImage.disabled = false;
       this.nodes.btnShareImage.innerHTML = originalHtml;

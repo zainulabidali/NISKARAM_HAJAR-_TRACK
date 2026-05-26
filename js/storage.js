@@ -11,10 +11,16 @@ const StorageService = {
     SETTINGS: 'madrasa_settings'
   },
 
-  // Initialize service & seed sample data if empty
+  // Initialize service & initialize clean empty database if empty
   init() {
     if (!localStorage.getItem(this.KEYS.CLASSES)) {
-      this.seedData();
+      this._set(this.KEYS.CLASSES, []);
+      this._set(this.KEYS.STUDENTS, []);
+      this.saveAttendanceDb({});
+      this.saveSettings({
+        madrasaName: 'Darul Huda Islamic Madrasa',
+        weeklyOff: 'Friday'
+      });
     }
   },
 
@@ -401,13 +407,13 @@ const StorageService = {
     }
   },
 
-  // Reset entire database
+  // Reset entire database and initialize empty
   resetDatabase() {
     localStorage.removeItem(this.KEYS.CLASSES);
     localStorage.removeItem(this.KEYS.STUDENTS);
     localStorage.removeItem(this.KEYS.ATTENDANCE);
     localStorage.removeItem(this.KEYS.SETTINGS);
-    this.seedData();
+    this.init();
   },
 
   // --- SEED SAMPLE DATA ---

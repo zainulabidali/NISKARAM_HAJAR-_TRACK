@@ -608,13 +608,15 @@ const ShareService = {
       }
     }
 
-    // 3. WHATSAPP WEB REDIRECT FALLBACK (For desktop or web clients without native sharing)
-    const cleanText = encodeURIComponent(textReport);
-    let whatsappUrl = `https://api.whatsapp.com/send?text=${cleanText}`;
-    
-    const newTab = window.open(whatsappUrl, '_blank');
-    if (newTab) {
-      newTab.focus();
+    // 3. WHATSAPP WEB REDIRECT FALLBACK (For desktop or web clients without native sharing - only if textReport is present)
+    if (textReport) {
+      const cleanText = encodeURIComponent(textReport);
+      let whatsappUrl = `https://api.whatsapp.com/send?text=${cleanText}`;
+      
+      const newTab = window.open(whatsappUrl, '_blank');
+      if (newTab) {
+        newTab.focus();
+      }
     }
     
     return { success: true, method: 'fallback' };
