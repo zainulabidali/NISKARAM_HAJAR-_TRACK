@@ -31,6 +31,15 @@ const App = {
     this.renderClassDropdowns();
     this.navigateTo('home-view');
     this.loadDashboard();
+    
+    // Reactive PWA Status Listener
+    if (window.PwaManager) {
+      window.PwaManager.onStatusChange(() => {
+        if (this.state.activeView === 'settings-view') {
+          this.renderPwaSettings();
+        }
+      });
+    }
   },
 
   cacheDom() {
@@ -354,6 +363,8 @@ const App = {
       } else {
         this.loadClassesDirectory();
       }
+    } else if (viewId === 'settings-view') {
+      this.renderPwaSettings();
     }
   },
 
@@ -390,6 +401,105 @@ const App = {
     // Assigning modal dropdown options
     if (this.nodes.modalStudentClass) {
       this.nodes.modalStudentClass.innerHTML = classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+  },
+
+  // Dynamic PWA status rendering inside Settings
+  renderPwaSettings() {
+    const target = document.getElementById('pwa-settings-status');
+    if (!target) return;
+
+    if (!window.PwaManager) {
+      target.innerHTML = `
+        <div style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600; text-align: center; padding: 6px 0;">
+          ⚠️ PWA Manager module failed to load.
+        </div>
+      `;
+      return;
+    }
+
+    const isStandalone = window.PwaManager.isStandalone();
+    const isIOS = window.PwaManager.isIOSDevice();
+    const isInstallable = window.PwaManager.isInstallable();
+
+    let html = '';
+
+    if (isStandalone) {
+      html = `
+        <div style="display:flex; align-items:center; gap:10px; background: rgba(16, 185, 129, 0.08); padding: 12px; border-radius: 12px; border: 1.5px solid var(--color-present);">
+          <div style="font-size: 1.8rem; color: var(--color-present); line-height: 1;">✓</div>
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <div style="font-size: 0.9rem; font-weight: 800; color: var(--primary);">Application Installed</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; line-height: 1.3;">
+              Running successfully in standalone native app window. Offline access is fully enabled.
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (isInstallable) {
+      html = `
+        <div style="display:flex; flex-direction:column; gap:10px; background: rgba(6, 78, 59, 0.04); padding: 12px; border-radius: 12px; border: 1.5px solid var(--border-light);">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="font-size: 1.8rem; line-height: 1;">📥</div>
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <div style="font-size: 0.9rem; font-weight: 800; color: var(--primary);">Install Application</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; line-height: 1.3;">
+                Install this app on your device for quick launching and immersive native interface.
+              </div>
+            </div>
+          </div>
+          <button class="btn-primary" id="btn-settings-pwa-install" style="margin-top: 6px; font-weight: 800; border-radius: 10px;">
+            Install Now
+          </button>
+        </div>
+      `;
+    } else if (isIOS) {
+      html = `
+        <div style="display:flex; flex-direction:column; gap:10px; background: rgba(212, 175, 55, 0.06); padding: 12px; border-radius: 12px; border: 1.5px solid rgba(212, 175, 55, 0.3);">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="font-size: 1.8rem; line-height: 1;">📱</div>
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <div style="font-size: 0.9rem; font-weight: 800; color: var(--primary);">iOS Installation Instructions</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; line-height: 1.3;">
+                iOS Safari requires a manual tap to add the application to your mobile home screen.
+              </div>
+            </div>
+          </div>
+          <button class="btn-outline" id="btn-settings-pwa-ios" style="margin-top: 6px; font-weight: 800; border-radius: 10px; border-color: var(--secondary); color: var(--primary);">
+            View Add to Home Screen Instructions
+          </button>
+        </div>
+      `;
+    } else {
+      // Fallback
+      html = `
+        <div style="display:flex; align-items:center; gap:10px; background: rgba(6, 78, 59, 0.02); padding: 12px; border-radius: 12px; border: 1px dashed var(--border-light);">
+          <div style="font-size: 1.5rem; line-height: 1;">🌐</div>
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <div style="font-size: 0.8rem; font-weight: 800; color: var(--primary);">Perfect Browser Experience</div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; line-height: 1.3;">
+              This system runs as a fully optimized offline mobile app directly inside your browser. Installation is completely optional.
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    target.innerHTML = html;
+
+    // Bind event listeners
+    const installBtn = document.getElementById('btn-settings-pwa-install');
+    if (installBtn) {
+      installBtn.addEventListener('click', () => {
+        window.PwaManager.triggerInstall();
+      });
+    }
+
+    const iosBtn = document.getElementById('btn-settings-pwa-ios');
+    if (iosBtn) {
+      iosBtn.addEventListener('click', () => {
+        window.PwaManager.showIosInstructions();
+      });
     }
   },
 

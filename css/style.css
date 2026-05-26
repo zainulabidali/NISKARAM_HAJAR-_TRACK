@@ -267,6 +267,11 @@ body {
   -webkit-overflow-scrolling: touch; /* Butter smooth inertial iOS scrolls */
   position: relative;
   overscroll-behavior-y: contain; /* Prevents mobile browser pull refresh */
+  scrollbar-width: none; /* Hide scrollbar Firefox */
+}
+
+.app-main::-webkit-scrollbar {
+  display: none; /* Hide scrollbar Chrome/Safari/Edge */
 }
 
 /* Screen Transitions classes */
@@ -281,7 +286,12 @@ body {
   display: none;
   opacity: 0;
   transform: translate3d(0, 10px, 0);
-  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  scrollbar-width: none;
+}
+
+.app-view::-webkit-scrollbar {
+  display: none;
 }
 
 .app-view.active {
@@ -314,11 +324,11 @@ body {
   background: transparent;
   cursor: pointer;
   gap: 3px;
-  transition: color 0.2s, transform 0.1s;
+  transition: color 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .nav-item:active {
-  transform: scale(0.95);
+  transform: scale(0.92);
 }
 
 .nav-icon {
@@ -329,13 +339,14 @@ body {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transition: stroke 0.25s, transform 0.2s;
+  transition: stroke 0.25s, fill 0.25s, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .nav-label {
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.2px;
+  transition: color 0.25s;
 }
 
 /* Active bottom tab states */
@@ -346,11 +357,13 @@ body {
 .nav-item.active .nav-icon {
   stroke: var(--primary);
   fill: rgba(6, 78, 59, 0.08); /* soft fill highlight */
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.12);
+  filter: drop-shadow(0 2px 4px rgba(6, 78, 59, 0.15));
 }
 
 .nav-item.active .nav-label {
   color: var(--primary);
+  font-weight: 800;
 }
 
 /* --- REUSABLE CARD SYSTEMS --- */

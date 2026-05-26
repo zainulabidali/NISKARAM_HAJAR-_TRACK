@@ -25,41 +25,6 @@
 
   <div class="app-container">
     
-    <!-- Android PWA Fixed Top Install Banner -->
-    <div id="pwa-android-banner" class="pwa-banner">
-      <div class="pwa-banner-content">
-        <div class="pwa-banner-icon">📱</div>
-        <div class="pwa-banner-text">
-          <div class="pwa-banner-title">Install App</div>
-          <div class="pwa-banner-desc">Install this app for faster access and a better experience</div>
-        </div>
-      </div>
-      <div class="pwa-banner-buttons">
-        <button id="btn-android-install" class="btn-pwa-install">Install Now</button>
-        <button id="btn-android-close" class="btn-pwa-close">&times;</button>
-      </div>
-    </div>
-
-    <!-- iOS PWA Fixed Top Install Banner -->
-    <div id="pwa-ios-banner" class="pwa-banner ios-pwa-banner">
-      <div class="pwa-banner-header">
-        <div class="pwa-banner-icon">📱</div>
-        <div class="pwa-banner-text">
-          <div class="pwa-banner-title">Install App on iPhone</div>
-          <div class="pwa-banner-desc">Tap Share &rarr; Add to Home Screen</div>
-        </div>
-        <button id="btn-ios-close" class="btn-pwa-close">&times;</button>
-      </div>
-      <div class="pwa-ios-steps">
-        <div class="pwa-ios-step"><span>1</span> Tap Share icon</div>
-        <div class="pwa-ios-step"><span>2</span> Select "Add to Home Screen"</div>
-        <div class="pwa-ios-step"><span>3</span> Tap Add</div>
-      </div>
-      <div class="pwa-ios-footer">
-        <button id="btn-ios-gotit" class="btn-pwa-install" style="width: 100px;">Got It</button>
-      </div>
-    </div>
-
     <!-- Offline Mode top indicator banner -->
     <div id="offline-indicator" class="offline-banner"></div>
 
@@ -445,6 +410,16 @@
           </button>
         </div>
 
+        <!-- App Installation Settings Section -->
+        <h3 class="settings-section-title">App Installation (Optional)</h3>
+        <div class="card" id="settings-pwa-card">
+          <div id="pwa-settings-status" style="display:flex; flex-direction:column; gap:12px;">
+            <div style="font-size: 0.82rem; color: var(--text-muted); font-weight: 500;">
+              Checking device capability...
+            </div>
+          </div>
+        </div>
+
         <!-- Data Backups Management -->
         <h3 class="settings-section-title">Data Administration</h3>
         <div class="card" style="display:flex; flex-direction:column; gap:12px;">
@@ -502,9 +477,16 @@
 
         <button class="nav-item" data-view="attendance-view">
           <svg class="nav-icon" viewBox="0 0 24 24">
-            <rect x="5" y="4" width="14" height="16" rx="2" />
-            <path d="M9 9h6M9 13h6M9 17h4" />
-            <circle cx="12" cy="4" r="1.2" fill="#fbbf24" stroke="#fbbf24" />
+            <!-- Dome base and outline -->
+            <path d="M12 3c-3.5 0-6.5 2.5-6.5 6v5h13v-5c0-3.5-3-6-6.5-6z" />
+            <!-- Bottom base of mosque -->
+            <path d="M3 14h18v4c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2v-4z" />
+            <!-- Dome crescent tip -->
+            <path d="M12 3V1M12 1a2 2 0 011.5 2" stroke="#fbbf24" stroke-width="1.5" />
+            <!-- Archway door -->
+            <path d="M10 20v-3.5c0-1.1.9-1.5 2-1.5s2 .4 2 1.5V20" stroke="#fbbf24" stroke-width="1.5" />
+            <!-- Minarets/Pillars on the side -->
+            <path d="M5 14V9.5L6 9M19 14V9.5L18 9" />
           </svg>
           <span class="nav-label">Attendance</span>
         </button>
@@ -520,10 +502,14 @@
 
         <button class="nav-item" data-view="students-view">
           <svg class="nav-icon" viewBox="0 0 24 24">
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 00-3-3.87" stroke="#fbbf24" />
-            <path d="M16 3.13a4 4 0 010 7.75" stroke="#fbbf24" />
+            <!-- Diamond cap top -->
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <!-- Hanging tassel -->
+            <path d="M20 7.5v5c0 .5-.5 1-1 1s-1-.5-1-1v-5" stroke="#fbbf24" stroke-width="1.5" />
+            <!-- Cap base skullcap -->
+            <path d="M6 9v3.5c0 2.5 2.7 4.5 6 4.5s6-2 6-4.5V9" />
+            <!-- Student profile neck and collar gold accent -->
+            <path d="M8 20c0-1.8 1.8-3 4-3s4 1.2 4 3" stroke="#fbbf24" stroke-width="1.5" />
           </svg>
           <span class="nav-label">Students</span>
         </button>
@@ -589,6 +575,31 @@
 
           <button class="btn-primary" id="btn-save-student" style="margin-top: 10px;">
             Save Student Details
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: iOS INSTALLATION INSTRUCTIONS MODAL SHEET -->
+    <div class="modal-overlay" id="pwa-ios-banner">
+      <div class="modal-sheet">
+        <div class="modal-header" style="border-bottom: 2px solid var(--secondary); padding-bottom: 12px;">
+          <h3 class="modal-title" style="display:flex; align-items:center; gap:8px;">
+            <span>📱</span> Install on iPhone / iPad
+          </h3>
+          <button class="modal-close" id="btn-ios-close">&times;</button>
+        </div>
+        <div class="modal-body" style="padding-top: 16px;">
+          <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 16px;">
+            Add this application to your Home Screen to experience fullscreen mobile app performance and offline-mode usage:
+          </p>
+          <div class="pwa-ios-steps">
+            <div class="pwa-ios-step"><span>1</span> Tap the <strong>Share</strong> icon (square with up arrow) in Safari's toolbar.</div>
+            <div class="pwa-ios-step" style="margin-top: 12px;"><span>2</span> Scroll down and select <strong>"Add to Home Screen"</strong> option.</div>
+            <div class="pwa-ios-step" style="margin-top: 12px;"><span>3</span> Tap the <strong>"Add"</strong> button in the top-right corner.</div>
+          </div>
+          <button id="btn-ios-gotit" class="btn-primary" style="background: linear-gradient(135deg, var(--secondary), var(--secondary-light)); border: none; color: var(--primary); font-weight: 800; margin-top: 20px;">
+            Got It
           </button>
         </div>
       </div>
