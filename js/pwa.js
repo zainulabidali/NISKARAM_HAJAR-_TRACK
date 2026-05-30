@@ -124,6 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  if (iosBanner) {
+    iosBanner.addEventListener('click', (e) => {
+      if (e.target === iosBanner) {
+        PwaManager.hideIosInstructions();
+      }
+    });
+  }
+
   // Android/Desktop browser beforeinstallprompt handling
   window.addEventListener('beforeinstallprompt', (e) => {
     // Prevent default browser install banner/prompts automatically

@@ -19,7 +19,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <!-- Core Styling -->
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=2">
 </head>
 <body>
 
@@ -512,41 +512,44 @@
           </svg>
           <span class="nav-label">Settings</span>
         </button>
+      </nav>
+    </div> <!-- Close app-container -->
 
     <!-- POPUP MODALS IN-APP OVERLAYS -->
     
-    <!-- MODAL 1: ADD / EDIT CLASS SHEET -->
+    <!-- MODAL 1: ADD / EDIT CLASS POPUP -->
     <div class="modal-overlay" id="modal-class">
-      <div class="modal-sheet">
+      <div class="modal-card">
         <div class="modal-header">
           <h3 class="modal-title" id="modal-class-title">Add New Class</h3>
-          <button class="modal-close" id="modal-class-close">&times;</button>
+          <button class="modal-close" id="modal-class-close" title="Close">&times;</button>
         </div>
         <div class="modal-body">
           <input type="hidden" id="modal-class-id">
           <div class="form-field">
             <label class="form-label" for="modal-class-name">Class Name</label>
-            <input type="text" id="modal-class-name" class="input-field" placeholder="e.g. Class 1 - Primary">
+            <input type="text" id="modal-class-name" class="input-field" placeholder="e.g. Class 1">
           </div>
-          <button class="btn-primary" id="btn-save-class" style="margin-top: 10px;">
-            Save Class
-          </button>
+          <div class="modal-action-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px;">
+            <button class="btn-outline" id="btn-cancel-class" type="button" style="border-color: var(--text-muted); color: var(--text-muted);">Cancel</button>
+            <button class="btn-primary" id="btn-save-class" type="button">Save</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- MODAL 2: ADD / EDIT STUDENT SHEET -->
+    <!-- MODAL 2: ADD / EDIT STUDENT POPUP -->
     <div class="modal-overlay" id="modal-student">
-      <div class="modal-sheet">
+      <div class="modal-card">
         <div class="modal-header">
-          <h3 class="modal-title" id="modal-student-title">Add Student</h3>
-          <button class="modal-close" id="modal-student-close">&times;</button>
+          <h3 class="modal-title" id="modal-student-title">Add New Student</h3>
+          <button class="modal-close" id="modal-student-close" title="Close">&times;</button>
         </div>
         <div class="modal-body">
           <input type="hidden" id="modal-student-id">
           
           <div class="form-field">
-            <label class="form-label" for="modal-student-name">Student Full Name</label>
+            <label class="form-label" for="modal-student-name">Student Name</label>
             <input type="text" id="modal-student-name" class="input-field" placeholder="e.g. Muhammad Ali">
           </div>
 
@@ -556,25 +559,26 @@
           </div>
 
           <div class="form-field">
-            <label class="form-label" for="modal-student-class">Assigned Class</label>
+            <label class="form-label" for="modal-student-class">Class Selection</label>
             <select id="modal-student-class" class="form-select" style="font-size: 0.9rem; padding: 10px 12px;"></select>
           </div>
 
-          <button class="btn-primary" id="btn-save-student" style="margin-top: 10px;">
-            Save Student Details
-          </button>
+          <div class="modal-action-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px;">
+            <button class="btn-outline" id="btn-cancel-student" type="button" style="border-color: var(--text-muted); color: var(--text-muted);">Cancel</button>
+            <button class="btn-primary" id="btn-save-student" type="button">Save</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- MODAL 3: iOS INSTALLATION INSTRUCTIONS MODAL SHEET -->
+    <!-- MODAL 3: iOS INSTALLATION INSTRUCTIONS MODAL CARD -->
     <div class="modal-overlay" id="pwa-ios-banner">
-      <div class="modal-sheet">
+      <div class="modal-card">
         <div class="modal-header" style="border-bottom: 2px solid var(--secondary); padding-bottom: 12px;">
           <h3 class="modal-title" style="display:flex; align-items:center; gap:8px;">
             <span>📱</span> Install on iPhone / iPad
           </h3>
-          <button class="modal-close" id="btn-ios-close">&times;</button>
+          <button class="modal-close" id="btn-ios-close" title="Close">&times;</button>
         </div>
         <div class="modal-body" style="padding-top: 16px;">
           <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 16px;">
@@ -592,12 +596,10 @@
       </div>
     </div>
 
-    </div>
-
   <!-- LOAD MAIN JS MODULES -->
-  <script src="js/storage.js"></script>
-  <script src="js/share.js"></script>
-  <script src="js/pwa.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/storage.js?v=2"></script>
+  <script src="js/share.js?v=2"></script>
+  <script src="js/pwa.js?v=2"></script>
+  <script src="js/app.js?v=2"></script>
 </body>
 </html>

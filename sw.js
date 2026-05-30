@@ -1,4 +1,4 @@
-const CACHE_NAME = 'madrasa-namaz-v1';
+const CACHE_NAME = 'madrasa-namaz-v2';
 const ASSETS = [
   './',
   './index.html',

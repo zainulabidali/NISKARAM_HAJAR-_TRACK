@@ -29,6 +29,7 @@ const App = {
     this.setupDateDefaults();
     this.setupEventListeners();
     this.setupVisualViewportListener();
+    this.setupFocusTrap();
     this.renderClassDropdowns();
     this.navigateTo('home-view');
     this.loadDashboard();
@@ -117,6 +118,7 @@ const App = {
       modalClassId: document.getElementById('modal-class-id'),
       modalClassName: document.getElementById('modal-class-name'),
       btnSaveClass: document.getElementById('btn-save-class'),
+      btnCancelClass: document.getElementById('btn-cancel-class'),
       
       modalStudent: document.getElementById('modal-student'),
       modalStudentTitle: document.getElementById('modal-student-title'),
@@ -125,7 +127,8 @@ const App = {
       modalStudentName: document.getElementById('modal-student-name'),
       modalStudentRoll: document.getElementById('modal-student-roll'),
       modalStudentClass: document.getElementById('modal-student-class'),
-      btnSaveStudent: document.getElementById('btn-save-student')
+      btnSaveStudent: document.getElementById('btn-save-student'),
+      btnCancelStudent: document.getElementById('btn-cancel-student')
     };
   },
 
@@ -282,8 +285,14 @@ const App = {
     if (this.nodes.modalClassClose) {
       this.nodes.modalClassClose.addEventListener('click', () => this.closeClassModal());
     }
+    if (this.nodes.btnCancelClass) {
+      this.nodes.btnCancelClass.addEventListener('click', () => this.closeClassModal());
+    }
     if (this.nodes.modalStudentClose) {
       this.nodes.modalStudentClose.addEventListener('click', () => this.closeStudentModal());
+    }
+    if (this.nodes.btnCancelStudent) {
+      this.nodes.btnCancelStudent.addEventListener('click', () => this.closeStudentModal());
     }
 
     // Modal Save Actions
@@ -384,6 +393,53 @@ const App = {
         if (this.nodes.modalStudentName) this.nodes.modalStudentName.focus();
       }, 100);
     };
+  },
+
+  setupFocusTrap() {
+    document.addEventListener('keydown', (e) => {
+      // Find the active modal overlay
+      const activeModal = document.querySelector('.modal-overlay.active, .modal-overlay.visible');
+      if (!activeModal) return;
+
+      // Handle Escape key to close the active modal
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (activeModal.id === 'modal-class') {
+          this.closeClassModal();
+        } else if (activeModal.id === 'modal-student') {
+          this.closeStudentModal();
+        } else if (activeModal.id === 'pwa-ios-banner') {
+          if (window.PwaManager) window.PwaManager.hideIosInstructions();
+        }
+        return;
+      }
+
+      // Handle Tab key for focus trapping
+      if (e.key === 'Tab') {
+        const focusableSelectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+        const focusableElements = Array.from(activeModal.querySelectorAll(focusableSelectors))
+          .filter(el => !el.disabled && el.offsetParent !== null); // only visible & enabled
+
+        if (focusableElements.length === 0) return;
+
+        const firstEl = focusableElements[0];
+        const lastEl = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          // Shift + Tab: if on first element, wrap to last
+          if (document.activeElement === firstEl) {
+            lastEl.focus();
+            e.preventDefault();
+          }
+        } else {
+          // Tab: if on last element, wrap to first
+          if (document.activeElement === lastEl) {
+            firstEl.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    });
   },
 
   // --- RENDERING ROUTINES ---
@@ -1112,7 +1168,7 @@ const App = {
       const classes = window.StorageService.getClasses();
       const cls = classes.find(c => c.id === clsId);
       if (cls) {
-        this.nodes.modalClassTitle.innerText = 'Edit Class Name';
+        this.nodes.modalClassTitle.innerText = 'Edit Class';
         this.nodes.modalClassId.value = cls.id;
         this.nodes.modalClassName.value = cls.name;
       }
@@ -1174,14 +1230,14 @@ const App = {
       const students = window.StorageService.getStudents();
       const s = students.find(x => x.id === studentId);
       if (s) {
-        this.nodes.modalStudentTitle.innerText = 'Edit Student Details';
+        this.nodes.modalStudentTitle.innerText = 'Edit Student';
         this.nodes.modalStudentId.value = s.id;
         this.nodes.modalStudentName.value = s.name;
         this.nodes.modalStudentRoll.value = s.rollNumber;
         this.nodes.modalStudentClass.value = s.classId;
       }
     } else {
-      this.nodes.modalStudentTitle.innerText = 'Add Student';
+      this.nodes.modalStudentTitle.innerText = 'Add New Student';
       this.nodes.modalStudentId.value = '';
       this.nodes.modalStudentName.value = '';
       

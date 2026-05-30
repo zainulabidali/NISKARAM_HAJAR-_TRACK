@@ -1066,39 +1066,45 @@ body {
 /* --- INTERACTIVE IN-APP POPUP MODALS --- */
 .modal-overlay {
   position: fixed;
-  top: var(--visual-viewport-offsetTop, 0px);
-  bottom: var(--keyboard-height, 0px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  background-color: rgba(6, 78, 59, 0.4);
-  backdrop-filter: blur(4px);
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6); /* Dark backdrop overlay covering the whole screen */
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   z-index: 1000;
   display: none;
-  align-items: flex-end; /* Mobile native bottom sheet entry */
+  align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-out;
 }
 
-.modal-overlay.active {
+.modal-overlay.active,
+.modal-overlay.visible {
   display: flex;
 }
 
-.modal-sheet {
+.modal-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background-color: var(--card-bg);
-  border-radius: 20px 20px 0 0;
-  width: 100%;
-  max-height: 85%;
-  padding: 24px;
-  padding-bottom: calc(24px + env(safe-area-inset-bottom));
-  box-shadow: 0 -10px 30px rgba(0,0,0,0.15);
-  border-top: 3px solid var(--secondary);
-  animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 20px; /* Border radius: 20px */
+  width: 90%; /* Width: 90% */
+  max-width: 420px; /* Max Width: 420px */
+  padding: 24px; /* Padding: 24px */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   overflow: hidden;
+  max-height: 90vh; /* Safe constraint for visual viewport height */
+  z-index: 1001;
+  animation: scaleFadeIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .modal-header {
@@ -1110,7 +1116,7 @@ body {
 }
 
 .modal-title {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: var(--primary);
 }
@@ -1120,7 +1126,25 @@ body {
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: color 0.2s, background-color 0.2s, transform 0.2s;
+}
+
+.modal-close:hover {
+  color: var(--secondary);
+  background-color: rgba(6, 78, 59, 0.05);
+  transform: rotate(90deg);
+}
+
+.modal-close:active {
+  transform: scale(0.9) rotate(90deg);
 }
 
 .modal-body {
@@ -1129,7 +1153,26 @@ body {
   flex-shrink: 1;
   min-height: 0;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 12px;
+  padding-bottom: 4px;
+  padding-right: 4px;
+}
+
+/* Premium modal body scrollbar */
+.modal-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: rgba(6, 78, 59, 0.15);
+  border-radius: 2px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
 }
 
 .form-field {
@@ -1145,10 +1188,12 @@ body {
   font-weight: 700;
   color: var(--text-dark);
   outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .input-field:focus {
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(6, 78, 59, 0.15);
 }
 
 /* Custom settings buttons and layout */
@@ -1167,9 +1212,26 @@ body {
   to { transform: translate3d(0, 0, 0); }
 }
 
-@keyframes slideUpSheet {
-  from { transform: translate3d(0, 100%, 0); }
-  to { transform: translate3d(0, 0, 0); }
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scaleFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes fadeIn {
