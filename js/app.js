@@ -28,6 +28,7 @@ const App = {
     this.cacheDom();
     this.setupDateDefaults();
     this.setupEventListeners();
+    this.setupVisualViewportListener();
     this.renderClassDropdowns();
     this.navigateTo('home-view');
     this.loadDashboard();
@@ -321,6 +322,68 @@ const App = {
     if (this.nodes.btnResetDb) {
       this.nodes.btnResetDb.addEventListener('click', () => this.resetDbAction());
     }
+  },
+
+  setupVisualViewportListener() {
+    const handleViewportChange = () => {
+      if (!window.visualViewport) return;
+      const height = window.visualViewport.height;
+      const offsetTop = window.visualViewport.offsetTop;
+      
+      // Prevent running if viewport dimensions are not yet ready/loaded
+      if (height <= 0) return;
+      
+      const windowHeight = window.innerHeight;
+      const keyboardHeight = Math.max(0, windowHeight - height);
+      
+      document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
+      document.documentElement.style.setProperty('--visual-viewport-offsetTop', `${offsetTop}px`);
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+      window.visualViewport.addEventListener('scroll', handleViewportChange);
+      // Run once immediately to set initial values
+      handleViewportChange();
+    }
+
+    // Set up auto-scroll listeners for input fields when they are focused
+    const setupAutoScroll = () => {
+      const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], select, textarea');
+      inputs.forEach(input => {
+        if (input.dataset.scrollBound) return;
+        input.dataset.scrollBound = 'true';
+        input.addEventListener('focus', () => {
+          setTimeout(() => {
+            input.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          }, 150);
+        });
+      });
+    };
+
+    // Run setup on load
+    setupAutoScroll();
+
+    // Since directory students roster loads dynamically, observe changes or run setup on modal opens
+    const originalOpenClassModal = this.openClassModal;
+    this.openClassModal = (classId = '') => {
+      originalOpenClassModal.call(this, classId);
+      setTimeout(setupAutoScroll, 50);
+      // Automatically focus first field with a slight delay to ensure keyb triggers
+      setTimeout(() => {
+        if (this.nodes.modalClassName) this.nodes.modalClassName.focus();
+      }, 100);
+    };
+
+    const originalOpenStudentModal = this.openStudentModal;
+    this.openStudentModal = (studentId = '') => {
+      originalOpenStudentModal.call(this, studentId);
+      setTimeout(setupAutoScroll, 50);
+      // Automatically focus first field with a slight delay to ensure keyb triggers
+      setTimeout(() => {
+        if (this.nodes.modalStudentName) this.nodes.modalStudentName.focus();
+      }, 100);
+    };
   },
 
   // --- RENDERING ROUTINES ---
