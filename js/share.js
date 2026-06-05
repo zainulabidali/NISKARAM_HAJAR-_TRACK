@@ -140,6 +140,13 @@ const ShareService = {
 
   // --- CANVAS HIGH-RESOLUTION IMAGE GENERATOR ---
   async generateDailyImageReport(reportData) {
+    if (document.fonts) {
+      try {
+        await document.fonts.ready;
+      } catch (e) {
+        console.warn('PWA: Custom fonts check failed, drawing with fallback fonts:', e);
+      }
+    }
     const settings = window.StorageService.getSettings();
     const classId = reportData.classId;
     const date = reportData.date;
@@ -339,12 +346,12 @@ const ShareService = {
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     
-    ctx.font = 'bold 26px sans-serif';
+    ctx.font = "bold 26px 'Outfit', sans-serif";
     ctx.fillText(settings.madrasaName.toUpperCase(), width / 2, 58);
 
     // Report subtitle (appends page indexes if paginated)
     ctx.fillStyle = '#fbbf24';
-    ctx.font = 'bold 18px sans-serif';
+    ctx.font = "bold 18px 'Outfit', sans-serif";
     const subtitle = totalPages > 1 
       ? `DAILY ATTENDANCE REPORT (PAGE ${currentPage} OF ${totalPages})`
       : 'DAILY ATTENDANCE REPORT';
@@ -352,7 +359,7 @@ const ShareService = {
 
     // Metadata line
     ctx.fillStyle = '#e2e8f0';
-    ctx.font = 'normal 14px sans-serif';
+    ctx.font = "normal 14px 'Outfit', sans-serif";
     ctx.fillText(`Date: ${date}    |    Class: ${className}    |    Students: ${totalStudents}`, width / 2, 126);
 
     // --- DRAW DETAILED TABLE ---
@@ -363,7 +370,7 @@ const ShareService = {
     ctx.fillRect(40, tableY, 720, tableHeaderHeight);
     
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 12px sans-serif';
+    ctx.font = "bold 12px 'Outfit', sans-serif";
     
     ctx.textAlign = 'center';
     ctx.fillText('ROLL', 75, tableY + 30);
@@ -383,7 +390,7 @@ const ShareService = {
     
     if (studentsChunk.length === 0) {
       ctx.fillStyle = '#4b5563';
-      ctx.font = 'italic 15px sans-serif';
+      ctx.font = "italic 15px 'Outfit', sans-serif";
       ctx.textAlign = 'center';
       ctx.fillText('No students registered in this class', width / 2, currentY + 30);
       currentY += rowHeight;
@@ -411,12 +418,12 @@ const ShareService = {
 
         // Roll Number
         ctx.fillStyle = '#111827';
-        ctx.font = 'bold 13px sans-serif';
+        ctx.font = "bold 13px 'Outfit', sans-serif";
         ctx.textAlign = 'center';
         ctx.fillText(student.rollNumber, 75, currentY + 27);
 
         // Student Name
-        ctx.font = 'bold 13px sans-serif';
+        ctx.font = "bold 13px 'Outfit', sans-serif";
         ctx.fillStyle = '#064e3b';
         ctx.textAlign = 'left';
         ctx.fillText(student.name, 120, currentY + 27);
@@ -430,7 +437,7 @@ const ShareService = {
           { p: 'Isha', x: 720 }
         ];
 
-        ctx.font = 'normal 13px sans-serif';
+        ctx.font = "normal 13px 'Outfit', sans-serif";
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
@@ -459,7 +466,7 @@ const ShareService = {
     ctx.fillRect(40, cardsY, 340, 4);
 
     ctx.fillStyle = '#064e3b';
-    ctx.font = 'bold 12px sans-serif';
+    ctx.font = "bold 12px 'Outfit', sans-serif";
     ctx.textAlign = 'left';
     ctx.fillText('🕌 PRAYER SUMMARY', 55, cardsY + 23);
 
@@ -469,12 +476,12 @@ const ShareService = {
     prayers.forEach(p => {
       const stats = prayerStats[p];
       ctx.fillStyle = '#4b5563';
-      ctx.font = 'bold 11px sans-serif';
+      ctx.font = "bold 11px 'Outfit', sans-serif";
       ctx.textAlign = 'left';
       ctx.fillText(`🕌 ${p}`, 55, rowY);
       
       ctx.fillStyle = '#111827';
-      ctx.font = 'normal 11px sans-serif';
+      ctx.font = "normal 11px 'Outfit', sans-serif";
       ctx.fillText(`✅ ${stats.present}   ❌ ${stats.absent}   ⚠️ ${stats.late}   🟡 ${stats.leave}`, 155, rowY);
       
       rowY += rowGap;
@@ -491,7 +498,7 @@ const ShareService = {
     ctx.fillRect(420, cardsY, 340, 4);
 
     ctx.fillStyle = '#064e3b';
-    ctx.font = 'bold 12px sans-serif';
+    ctx.font = "bold 12px 'Outfit', sans-serif";
     ctx.textAlign = 'left';
     ctx.fillText('📊 OVERALL DAILY STATS', 435, cardsY + 23);
 
@@ -509,12 +516,12 @@ const ShareService = {
     
     statsList.forEach(stat => {
       ctx.fillStyle = '#4b5563';
-      ctx.font = 'bold 11px sans-serif';
+      ctx.font = "bold 11px 'Outfit', sans-serif";
       ctx.textAlign = 'left';
       ctx.fillText(stat.label, 435, statRowY);
       
       ctx.fillStyle = '#111827';
-      ctx.font = 'bold 11px sans-serif';
+      ctx.font = "bold 11px 'Outfit', sans-serif";
       ctx.textAlign = 'right';
       ctx.fillText(stat.val, 745, statRowY);
       
@@ -528,23 +535,33 @@ const ShareService = {
     ctx.fillRect(40, footerY - 5, 720, 2);
 
     ctx.fillStyle = '#4b5563';
-    ctx.font = 'italic 12px sans-serif';
+    ctx.font = "italic 12px 'Outfit', sans-serif";
     ctx.textAlign = 'center';
     ctx.fillText('Mashallah, verify prayers daily to cultivate beautiful spiritual habits.', width / 2, footerY + 20);
     
     ctx.fillStyle = '#064e3b';
-    ctx.font = 'bold 13px sans-serif';
+    ctx.font = "bold 13px 'Outfit', sans-serif";
     ctx.fillText('🕌 NAMAZ ATTENDANCE MANAGEMENT SYSTEM 🕌', width / 2, footerY + 45);
 
     ctx.fillStyle = '#9ca3af';
-    ctx.font = 'normal 10px sans-serif';
+    ctx.font = "normal 10px 'Outfit', sans-serif";
     ctx.fillText('Generated via Madrasa Namaz App', width / 2, footerY + 68);
 
-    // Return as blob promise
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        resolve(blob);
-      }, 'image/png');
+    // Return as blob promise with safety bounds
+    return new Promise((resolve, reject) => {
+      try {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error("Image generation failed: Canvas returned a null/empty blob. This may be due to low device memory or canvas size limits."));
+          } else if (blob.size < 100) {
+            reject(new Error("Image generation failed: Generated image size is too small (" + blob.size + " bytes), indicating an incomplete draw."));
+          } else {
+            resolve(blob);
+          }
+        }, 'image/png');
+      } catch (err) {
+        reject(err);
+      }
     });
   },
 
@@ -557,69 +574,146 @@ const ShareService = {
     else if (status === 'Leave') icon = '🟡';
 
     ctx.fillStyle = '#111827';
-    ctx.font = '14px sans-serif';
+    ctx.font = "14px 'Outfit', sans-serif";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(icon, x, y);
   },
 
-  // --- WHATSAPP SHARING ENGINE WITH WEB SHARE API ---
-  async shareReport(textReport, imageBlob = null, title = 'Prayer Report') {
-    // 1. PRIMARY BULLETPROOF DISPATCH: Always download the file directly to PWA downloads folder
-    if (imageBlob) {
-      try {
-        const url = URL.createObjectURL(imageBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${title.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now()}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        // Delay URL revocation slightly to ensure memory stream starts safely
-        setTimeout(() => URL.revokeObjectURL(url), 100);
-      } catch (err) {
-        console.error('PWA: Auto-download trigger error:', err);
-      }
+  // Helper: Detect if file sharing is supported
+  canShareImageFiles() {
+    if (!navigator.share || !navigator.canShare) return false;
+    try {
+      const mockFile = new File([new Blob([''], { type: 'image/png' })], 'test.png', { type: 'image/png' });
+      return navigator.canShare({ files: [mockFile] });
+    } catch (e) {
+      console.warn('PWA: navigator.canShare file check failed:', e);
+      return false;
     }
+  },
 
-    // 2. NATIVE WEB SHARE PROMPT (For iOS Safari or native mobile browsers with file share support)
-    if (navigator.share) {
-      try {
-        const shareData = {
-          title: title,
-          text: textReport
-        };
-
-        if (imageBlob) {
-          const imageFile = new File([imageBlob], 'namaz_report.png', { type: 'image/png' });
-          if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
-            shareData.files = [imageFile];
-          }
-        }
-
-        await navigator.share(shareData);
-        return { success: true, method: 'web-share' };
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error('PWA: Web Share prompt error, using fallback...', err);
-        } else {
-          return { success: false, method: 'canceled' };
-        }
-      }
+  // Helper: Copy image blob to clipboard
+  async copyBlobToClipboard(blob) {
+    if (!navigator.clipboard || !window.ClipboardItem) {
+      console.warn('PWA: ClipboardItem or Clipboard API not supported.');
+      return false;
     }
+    try {
+      const item = new ClipboardItem({ [blob.type]: blob });
+      await navigator.clipboard.write([item]);
+      return true;
+    } catch (e) {
+      console.error('PWA: Failed to copy image blob to clipboard:', e);
+      return false;
+    }
+  },
 
-    // 3. WHATSAPP WEB REDIRECT FALLBACK (For desktop or web clients without native sharing - only if textReport is present)
-    if (textReport) {
-      const cleanText = encodeURIComponent(textReport);
-      let whatsappUrl = `https://api.whatsapp.com/send?text=${cleanText}`;
-      
+  // Helper: Trigger standard browser file download
+  downloadBlob(blob, filename) {
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 150);
+      return true;
+    } catch (e) {
+      console.error('PWA: Failed to trigger blob download:', e);
+      return false;
+    }
+  },
+
+  // Helper: Direct WhatsApp Web text sharing redirect
+  shareTextToWhatsApp(text) {
+    try {
+      const cleanText = encodeURIComponent(text);
+      const whatsappUrl = `https://api.whatsapp.com/send?text=${cleanText}`;
       const newTab = window.open(whatsappUrl, '_blank');
       if (newTab) {
         newTab.focus();
+        return true;
+      }
+      window.location.href = whatsappUrl;
+      return true;
+    } catch (e) {
+      console.error('PWA: Failed to open WhatsApp URL:', e);
+      return false;
+    }
+  },
+
+  // --- WHATSAPP SHARING ENGINE WITH WEB SHARE API & FALLBACKS ---
+  async shareReport(textReport, imageBlob = null, title = 'Prayer Report') {
+    const filename = `${title.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now()}.png`;
+
+    // 1. If we have an image blob, try Web Share API with files ONLY
+    if (imageBlob) {
+      if (this.canShareImageFiles()) {
+        try {
+          const imageFile = new File([imageBlob], filename, {
+            type: 'image/png',
+            lastModified: Date.now()
+          });
+
+          const shareData = {
+            files: [imageFile],
+            title: title
+          };
+
+          await navigator.share(shareData);
+          return { success: true, method: 'web-share' };
+        } catch (err) {
+          if (err.name === 'AbortError') {
+            console.log('PWA: Share aborted by user.');
+            return { success: false, method: 'canceled' };
+          }
+          console.error('PWA: Web Share failed, falling back...', err);
+        }
+      } else {
+        console.warn('PWA: Web Share with files is not supported on this browser/device.');
+      }
+
+      // 2. FALLBACK STRATEGIES FOR IMAGE SHARING:
+      // Priority 2: Download image automatically
+      this.downloadBlob(imageBlob, filename);
+
+      // Priority 4: Try copying to clipboard
+      const copied = await this.copyBlobToClipboard(imageBlob);
+
+      // Priority 3: Inform caller that fallback was triggered
+      return { 
+        success: false, 
+        method: 'fallback-triggered', 
+        copied: copied,
+        filename: filename
+      };
+    }
+
+    // 3. Fallback to sharing only text via Web Share (if image is not present)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: title,
+          text: textReport
+        });
+        return { success: true, method: 'web-share-text' };
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          return { success: false, method: 'canceled' };
+        }
+        console.error('PWA: Text web share failed:', err);
       }
     }
-    
-    return { success: true, method: 'fallback' };
+
+    // 4. WhatsApp Web Redirect for text only
+    if (textReport) {
+      this.shareTextToWhatsApp(textReport);
+      return { success: true, method: 'whatsapp-redirect' };
+    }
+
+    return { success: false, method: 'unsupported' };
   }
 };
 

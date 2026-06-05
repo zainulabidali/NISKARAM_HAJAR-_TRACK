@@ -90,6 +90,7 @@ const App = {
       repPctBadge: document.getElementById('report-percentage-badge'),
       repVisualTarget: document.getElementById('report-visual-table-target'),
       btnShareImage: document.getElementById('btn-share-image'),
+      btnShareText: document.getElementById('btn-share-text'),
 
       // Students / Directory Elements
       tabStudentDir: document.getElementById('tab-student-dir'),
@@ -128,7 +129,17 @@ const App = {
       modalStudentRoll: document.getElementById('modal-student-roll'),
       modalStudentClass: document.getElementById('modal-student-class'),
       btnSaveStudent: document.getElementById('btn-save-student'),
-      btnCancelStudent: document.getElementById('btn-cancel-student')
+      btnCancelStudent: document.getElementById('btn-cancel-student'),
+
+      // Share Preview Modal
+      modalSharePreview: document.getElementById('modal-share-preview'),
+      modalSharePreviewClose: document.getElementById('modal-share-preview-close'),
+      sharePreviewStatus: document.getElementById('share-preview-status'),
+      sharePreviewImg: document.getElementById('share-preview-img'),
+      btnModalShareNative: document.getElementById('btn-modal-share-native'),
+      btnModalShareDownload: document.getElementById('btn-modal-share-download'),
+      btnModalShareCopy: document.getElementById('btn-modal-share-copy'),
+      btnModalShareText: document.getElementById('btn-modal-share-text')
     };
   },
 
@@ -231,6 +242,31 @@ const App = {
     // Share triggers
     if (this.nodes.btnShareImage) {
       this.nodes.btnShareImage.addEventListener('click', () => this.shareReportImage());
+    }
+
+    if (this.nodes.btnShareText) {
+      this.nodes.btnShareText.addEventListener('click', () => this.shareReportText());
+    }
+
+    // Share Preview Modal Controls
+    if (this.nodes.modalSharePreviewClose) {
+      this.nodes.modalSharePreviewClose.addEventListener('click', () => this.closeSharePreviewModal());
+    }
+
+    if (this.nodes.btnModalShareNative) {
+      this.nodes.btnModalShareNative.addEventListener('click', () => this.shareReportImageFromModal());
+    }
+
+    if (this.nodes.btnModalShareDownload) {
+      this.nodes.btnModalShareDownload.addEventListener('click', () => this.downloadReportImageFromModal());
+    }
+
+    if (this.nodes.btnModalShareCopy) {
+      this.nodes.btnModalShareCopy.addEventListener('click', () => this.copyReportImageFromModal());
+    }
+
+    if (this.nodes.btnModalShareText) {
+      this.nodes.btnModalShareText.addEventListener('click', () => this.shareReportTextFromModal());
     }
 
     // --- DIRECTORIES TABBED INTERFACES ---
@@ -980,6 +1016,14 @@ const App = {
     // Put everything inside the target container!
     this.nodes.repVisualTarget.innerHTML = tableHtml + summaryHtml;
 
+    // Show/hide share buttons based on report context
+    if (this.nodes.btnShareImage) {
+      this.nodes.btnShareImage.style.display = 'flex';
+    }
+    if (this.nodes.btnShareText) {
+      this.nodes.btnShareText.style.gridColumn = 'auto';
+    }
+
     // Slide down display card
     this.nodes.repResultCard.classList.add('visible');
     this.nodes.repResultCard.scrollIntoView({ behavior: 'smooth' });
@@ -1040,6 +1084,15 @@ const App = {
     html += `</tbody></table></div>`;
     this.nodes.repVisualTarget.innerHTML = html;
 
+    // Show/hide share buttons based on report context (only text share for monthly)
+    if (this.nodes.btnShareImage) {
+      this.nodes.btnShareImage.style.display = 'none';
+    }
+    if (this.nodes.btnShareText) {
+      this.nodes.btnShareText.style.gridColumn = 'span 2';
+    }
+
+    // Slide down display card
     this.nodes.repResultCard.classList.add('visible');
     this.nodes.repResultCard.scrollIntoView({ behavior: 'smooth' });
   },
@@ -1056,23 +1109,179 @@ const App = {
     // Set interactive loader inside button
     const originalHtml = this.nodes.btnShareImage.innerHTML;
     this.nodes.btnShareImage.disabled = true;
+    this.nodes.btnShareImage.style.pointerEvents = 'none';
     this.nodes.btnShareImage.innerText = 'Generating image...';
 
     try {
       const title = `Daily Attendance Report - Full-Day`;
       
-      // Draw dynamically in background canvas & convert to blob PNG
+      // Ensure canvas fonts load first
       const blob = await window.ShareService.generateDailyImageReport(data.report);
       
+      const textReport = window.ShareService.generateDailyTextReport(data.report);
+
       // Call system share API
-      await window.ShareService.shareReport("", blob, title);
+      const result = await window.ShareService.shareReport("", blob, title);
+
+      if (result.method === 'canceled') {
+        console.log('User canceled the share sheet.');
+        return;
+      }
+
+      if (result.method === 'web-share') {
+        console.log('Successfully shared report image natively.');
+        return;
+      }
+
+      // If it triggers fallback (due to browser incompatibility or error)
+      if (result.method === 'fallback-triggered') {
+        this.openSharePreviewModal(blob, textReport, title, result.copied);
+      }
     } catch (e) {
       console.error('Image generator share failure:', e);
-      alert('Error rendering or saving report card image.');
+      alert('Error rendering or sharing report card image: ' + e.message);
     } finally {
       this.nodes.btnShareImage.disabled = false;
+      this.nodes.btnShareImage.style.pointerEvents = 'auto';
       this.nodes.btnShareImage.innerHTML = originalHtml;
     }
+  },
+
+  async shareReportText() {
+    const data = this.state.reports.generatedData;
+    if (!data) return;
+
+    // Set interactive loader inside button
+    const originalHtml = this.nodes.btnShareText.innerHTML;
+    this.nodes.btnShareText.disabled = true;
+    this.nodes.btnShareText.style.pointerEvents = 'none';
+    this.nodes.btnShareText.innerText = 'Preparing text...';
+
+    try {
+      const textReport = data.type === 'daily' 
+        ? window.ShareService.generateDailyTextReport(data.report)
+        : window.ShareService.generateMonthlyTextReport(data.report);
+        
+      const title = data.type === 'daily' 
+        ? 'Daily Attendance Report' 
+        : 'Monthly Attendance Summary';
+
+      await window.ShareService.shareReport(textReport, null, title);
+    } catch (e) {
+      console.error('Text report share failure:', e);
+      alert('Error sharing report text: ' + e.message);
+    } finally {
+      this.nodes.btnShareText.disabled = false;
+      this.nodes.btnShareText.style.pointerEvents = 'auto';
+      this.nodes.btnShareText.innerHTML = originalHtml;
+    }
+  },
+
+  // Modal Actions
+  openSharePreviewModal(blob, textReport, title, wasCopiedToClipboard) {
+    // Revoke previous URL if any
+    if (this.state.share && this.state.share.url) {
+      URL.revokeObjectURL(this.state.share.url);
+    }
+
+    const url = URL.createObjectURL(blob);
+    this.state.share = { blob, text: textReport, title, url };
+
+    // Set preview image
+    if (this.nodes.sharePreviewImg) {
+      this.nodes.sharePreviewImg.src = url;
+    }
+
+    // Set status message
+    let statusMsg = "Your report image has been generated successfully.";
+    if (wasCopiedToClipboard) {
+      statusMsg = "⚠️ Native sharing is not supported by your browser. We have automatically downloaded the image and copied it to your clipboard. You can paste it directly into WhatsApp, or use the options below:";
+    } else {
+      statusMsg = "⚠️ Native sharing is not supported by your browser. We have automatically downloaded the image. Copy it or share the text version using the options below:";
+    }
+    
+    if (this.nodes.sharePreviewStatus) {
+      this.nodes.sharePreviewStatus.innerText = statusMsg;
+    }
+
+    // Show modal
+    if (this.nodes.modalSharePreview) {
+      this.nodes.modalSharePreview.classList.add('active');
+    }
+  },
+
+  closeSharePreviewModal() {
+    if (this.state.share && this.state.share.url) {
+      URL.revokeObjectURL(this.state.share.url);
+      this.state.share.url = null;
+    }
+    if (this.nodes.sharePreviewImg) {
+      this.nodes.sharePreviewImg.src = '';
+    }
+    if (this.nodes.modalSharePreview) {
+      this.nodes.modalSharePreview.classList.remove('active');
+    }
+  },
+
+  async shareReportImageFromModal() {
+    if (!this.state.share || !this.state.share.blob) return;
+    const blob = this.state.share.blob;
+    const title = this.state.share.title;
+
+    const originalHtml = this.nodes.btnModalShareNative.innerHTML;
+    this.nodes.btnModalShareNative.disabled = true;
+    this.nodes.btnModalShareNative.innerText = 'Sharing...';
+
+    try {
+      const result = await window.ShareService.shareReport("", blob, title);
+      if (result.success) {
+        this.closeSharePreviewModal();
+      } else if (result.method === 'canceled') {
+        console.log('Share canceled.');
+      } else {
+        alert('Sharing is still not supported on this browser context. Please use Download or Copy Image.');
+      }
+    } catch (e) {
+      console.error('Modal native share failed:', e);
+      alert('Failed to share: ' + e.message);
+    } finally {
+      this.nodes.btnModalShareNative.disabled = false;
+      this.nodes.btnModalShareNative.innerHTML = originalHtml;
+    }
+  },
+
+  downloadReportImageFromModal() {
+    if (!this.state.share || !this.state.share.blob) return;
+    const blob = this.state.share.blob;
+    const title = this.state.share.title;
+    const filename = `${title.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now()}.png`;
+
+    window.ShareService.downloadBlob(blob, filename);
+  },
+
+  async copyReportImageFromModal() {
+    if (!this.state.share || !this.state.share.blob) return;
+    const blob = this.state.share.blob;
+
+    const originalHtml = this.nodes.btnModalShareCopy.innerHTML;
+    this.nodes.btnModalShareCopy.disabled = true;
+    this.nodes.btnModalShareCopy.innerText = 'Copying...';
+
+    const success = await window.ShareService.copyBlobToClipboard(blob);
+    this.nodes.btnModalShareCopy.disabled = false;
+    this.nodes.btnModalShareCopy.innerHTML = originalHtml;
+
+    if (success) {
+      alert('📋 Image successfully copied to clipboard! You can now paste it directly into WhatsApp or Telegram.');
+    } else {
+      alert('❌ Clipboard image copy is not supported on this browser. Please download the image manually.');
+    }
+  },
+
+  shareReportTextFromModal() {
+    if (!this.state.share || !this.state.share.text) return;
+    const text = this.state.share.text;
+    window.ShareService.shareTextToWhatsApp(text);
   },
 
   // --- DIRECTORY (STUDENTS & CLASSES MODULES) ---

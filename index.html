@@ -299,9 +299,9 @@
           </div>
 
           <!-- WhatsApp share triggers block -->
-          <div class="btn-group-row" style="grid-template-columns: 1fr;">
+          <div class="btn-group-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             
-            <button class="btn-primary" id="btn-share-image" style="background: linear-gradient(135deg, #d4af37, #b28e23);">
+            <button class="btn-primary" id="btn-share-image" style="background: linear-gradient(135deg, #d4af37, #b28e23); display: flex; align-items: center; justify-content: center; gap: 8px;">
               <!-- Custom image export share SVG icon -->
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -309,6 +309,14 @@
                 <path d="M21 15l-5-5L5 21" />
               </svg>
               Share as Image
+            </button>
+
+            <button class="btn-outline" id="btn-share-text" style="display: flex; align-items: center; justify-content: center; gap: 8px; border-color: var(--primary); color: var(--primary); font-weight: 800; border-radius: 10px;">
+              <!-- Message Square SVG icon -->
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              Share as Text
             </button>
 
           </div>
@@ -592,6 +600,50 @@
           <button id="btn-ios-gotit" class="btn-primary" style="background: linear-gradient(135deg, var(--secondary), var(--secondary-light)); border: none; color: var(--primary); font-weight: 800; margin-top: 20px;">
             Got It
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 4: REPORT IMAGE PREVIEW & SHARE FALLBACK -->
+    <div class="modal-overlay" id="modal-share-preview">
+      <div class="modal-card" style="max-width: 440px;">
+        <div class="modal-header" style="border-bottom: 2px solid var(--secondary); padding-bottom: 12px;">
+          <h3 class="modal-title" style="display:flex; align-items:center; gap:8px;">
+            <span>📸</span> Share & Download Report
+          </h3>
+          <button class="modal-close" id="modal-share-preview-close" title="Close">&times;</button>
+        </div>
+        <div class="modal-body" style="padding-top: 16px; display:flex; flex-direction:column; gap:16px; align-items:center; width:100%;">
+          <p id="share-preview-status"></p>
+          
+          <!-- Image preview container -->
+          <div id="share-preview-img-container">
+            <img id="share-preview-img" src="" alt="Report Preview">
+          </div>
+          
+          <div style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+            <button id="btn-modal-share-native" class="btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, var(--primary), var(--primary-light));">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Share via Apps (Web Share)
+            </button>
+            
+            <div class="share-modal-btn-grid">
+              <button id="btn-modal-share-download" class="btn-outline" style="display: flex; align-items: center; justify-content: center; gap: 6px; border-color: var(--primary); color: var(--primary); font-weight: 800; border-radius: 10px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                Download Image
+              </button>
+              
+              <button id="btn-modal-share-copy" class="btn-outline" style="display: flex; align-items: center; justify-content: center; gap: 6px; border-color: var(--primary); color: var(--primary); font-weight: 800; border-radius: 10px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                Copy Image
+              </button>
+            </div>
+            
+            <button id="btn-modal-share-text" class="btn-outline" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; border-color: var(--secondary); color: var(--text-dark); background: rgba(212, 175, 55, 0.08); font-weight: 800; border-radius: 10px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Share Report as Text (WhatsApp)
+            </button>
+          </div>
         </div>
       </div>
     </div>
